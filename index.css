@@ -1,23 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 :root{
-  color-scheme:dark;
-  --bg:#080d0b;
-  --surface:#0d1511;
-  --surface-2:#111d16;
-  --surface-3:#17271d;
-  --surface-hover:#1b3023;
-  --green:#39df8b;
-  --green-light:#70f2ad;
-  --green-dark:#15965b;
-  --green-soft:rgba(57,223,139,.1);
-  --text:#f0f8f2;
-  --muted:#82988a;
-  --border:rgba(180,225,194,.1);
-  --border-hover:rgba(57,223,139,.3);
-  --danger:#ff7272;
-  --shadow:0 25px 80px rgba(0,0,0,.45);
-  --radius:20px;
-  --transition:all .22s cubic-bezier(.2,.7,.2,1)
+--bg:#080d0b;--surface:#0d1511;--surface-2:#111d16;--surface-3:#17271d;--surface-hover:#1b3023;
+--green:#39df8b;--green-light:#70f2ad;--green-dark:#15965b;--green-soft:rgba(57,223,139,.1);
+--text:#f0f8f2;--muted:#82988a;--border:rgba(180,225,194,.1);--border-hover:rgba(57,223,139,.3);
+--danger:#ff7272;--shadow:0 25px 80px rgba(0,0,0,.45);--radius:20px;--transition:all .22s cubic-bezier(.2,.7,.2,1)
 }
 *{box-sizing:border-box;margin:0;padding:0}
 [hidden]{display:none!important}
@@ -181,9 +167,7 @@ textarea{resize:vertical;min-height:85px}
 #plBox{margin-top:12px}
 #plBox[hidden]{display:none!important}
 #plBox input{margin-bottom:8px}
-@media(max-width:900px){
-.app{grid-template-columns:310px minmax(0,1fr)}
-}
+@media(max-width:900px){.app{grid-template-columns:310px minmax(0,1fr)}}
 @media(max-width:760px){
 body{overflow:hidden}
 .app{grid-template-columns:1fr}
