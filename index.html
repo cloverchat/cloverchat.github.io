@@ -86,12 +86,13 @@
 <div class="or"><span>أو باستخدام رقم الهاتف</span></div>
 <label class="field-label" for="phoneIn">رقم الهاتف</label>
 <input id="phoneIn" type="tel" dir="ltr" placeholder="+20123456789" autocomplete="tel">
+<div id="recaptcha-container"></div>
 <button id="phoneBtn" class="btn primary-btn" type="button">
 <i data-lucide="send"></i>
 <span>إرسال كود التحقق</span>
 </button>
 <div id="codeBox" class="code-box" hidden>
-<p class="muted small">افتح بوت تلجرام وشارك رقمك لاستلام كود التحقق.</p>
+<p class="muted small">أدخل كود التحقق المرسل إلى هاتفك عبر SMS.</p>
 <input id="codeIn" inputmode="numeric" maxlength="6" dir="ltr" placeholder="000000">
 <button id="codeBtn" class="btn primary-btn" type="button">تأكيد الكود</button>
 </div>
@@ -110,6 +111,7 @@
 <p class="muted small">اربط رقم هاتفك بحسابك لتسهيل التواصل.</p>
 <label class="field-label" for="plPhone">رقم الهاتف</label>
 <input id="plPhone" type="tel" dir="ltr" placeholder="+20123456789">
+<div id="link-recaptcha-container"></div>
 <button id="plBtn" class="btn primary-btn" type="button">
 <i data-lucide="send"></i>
 إرسال كود التحقق
