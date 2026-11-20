@@ -1,37 +1,282 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07130f">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#090e0c">
+<meta name="description" content="CloverChat - تواصل مع أصدقائك بسهولة في تجربة دردشة عصرية.">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="AlamChat - منصة دردشة للتواصل ومشاركة الرسائل والصور بسهولة.">
-<title>AlamChat | علم شات</title>
+<title>CloverChat | دردشة بلا حدود</title>
 <link rel="icon" href="https://acrft.github.io/images/achat.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" media="print" onload="this.media='all'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap"></noscript>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./index.css">
+<script defer src="https://unpkg.com/lucide@latest"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script defer src="./index.js"></script>
 </head>
 <body>
-<div id="toast"></div>
-<main id="login" class="center" hidden><div class="card">
-<img class="logo" src="https://acrft.github.io/images/achat.png" alt="AlamChat" width="84" height="84" decoding="async">
-<h1>Alam<span>Chat</span></h1><p class="muted">عالمك، محادثاتك، في مكان واحد</p>
-<button id="googleBtn" class="btn">تسجيل الدخول باستخدام Google</button><button id="githubBtn" class="btn dark">تسجيل الدخول باستخدام GitHub</button>
-<div class="or">أو برقم الهاتف</div><input id="phoneIn" type="tel" dir="ltr" placeholder="+20123456789 (مع كود الدولة)">
-<button id="phoneBtn" class="btn">إرسال الكود عبر تلجرام</button>
-<div id="codeBox" hidden><p class="muted small">افتح بوت تلجرام، شارك رقمك، وهيوصلك الكود هناك.</p><input id="codeIn" inputmode="numeric" maxlength="6" dir="ltr" placeholder="الكود (6 أرقام)"><button id="codeBtn" class="btn">تأكيد الكود</button></div>
-</div></main>
-<main id="plink" class="center" hidden><div class="card"><h2>ربط رقم الهاتف</h2><p class="muted small">اختياري. هيوصلك كود التأكيد على بوت تلجرام.</p><input id="plPhone" type="tel" dir="ltr" placeholder="+20123456789 (مع كود الدولة)"><button id="plBtn" class="btn">إرسال الكود عبر تلجرام</button><div id="plBox" hidden><input id="plCode" inputmode="numeric" maxlength="6" dir="ltr" placeholder="الكود (6 أرقام)"><button id="plCodeBtn" class="btn">تأكيد وربط الرقم</button></div><button id="plOut" class="btn ghost">رجوع</button></div></main>
-<main id="setup" class="center" hidden><div class="card"><h2>أنشئ ملفك الشخصي</h2><input id="suName" maxlength="30" placeholder="الاسم"><input id="suUser" maxlength="20" dir="ltr" placeholder="username (حروف إنجليزي وأرقام و _)"><p class="muted small">اليوزر نيم فريد ولا يمكن تغييره لاحقًا.</p><button id="suBtn" class="btn">ابدأ</button><button id="suOut" class="btn ghost">خروج</button></div></main>
-<section id="app" class="app" hidden><aside class="side"><header class="bar"><img id="meAv" class="av" alt=""><b>AlamChat</b><button id="profBtn" class="icon" title="البروفايل">⚙️</button></header><div class="search"><input id="findIn" dir="ltr" placeholder="ابحث بـ @username أو رقم هاتف"></div><div id="chatList" class="list"></div></aside>
-<main class="pane"><div id="empty" class="center muted">اختر محادثة أو ابحث عن يوزر لبدء محادثة جديدة 💬</div><div id="room" hidden><header class="bar"><button id="backBtn" class="icon back">→</button><img id="peerAv" class="av" alt=""><div><b id="peerName"></b><div id="peerUser" class="muted small" dir="ltr"></div></div></header><div id="msgs" class="msgs"></div><form id="form" class="input" autocomplete="off"><button id="imgBtn" type="button" class="icon">🖼️</button><input id="imgIn" type="file" accept="image/*" hidden><input id="msgIn" maxlength="500" placeholder="اكتب رسالتك..."><button class="icon send" title="إرسال">➤</button></form></div></main></section>
-<div id="modal" class="center modal" hidden><div class="card"><h2>البروفايل</h2><img id="pAv" class="logo round" alt=""><button id="pPhoto" class="btn ghost">تغيير الصورة</button><input id="pPhotoIn" type="file" accept="image/*" hidden><input id="pName" maxlength="30" placeholder="الاسم"><input id="pUserIn" dir="ltr" maxlength="20" placeholder="username"><div id="linked"></div><textarea id="pBio" maxlength="120" rows="2" placeholder="نبذة عنك"></textarea><button id="pSave" class="btn">حفظ</button><button id="pOut" class="btn dark">تسجيل الخروج</button><button id="pClose" class="btn ghost">إغلاق</button></div></div>
-</body></html>
+
+<div class="ambient ambient-one"></div>
+<div class="ambient ambient-two"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<!-- LOGIN -->
+<main id="login" class="center auth-screen" hidden>
+<div class="card auth-card">
+<div class="brand-mark">
+<img class="logo" src="https://acrft.github.io/images/achat.png" alt="CloverChat" width="76" height="76">
+</div>
+<div class="brand-name">Clover<span>Chat</span></div>
+<p class="muted auth-description">مساحتك الخاصة للتواصل والدردشة.</p>
+
+<div class="auth-divider"><span>ابدأ رحلتك</span></div>
+
+<button id="googleBtn" class="btn provider-btn" type="button">
+<span class="provider-icon google-icon">G</span>
+<span>المتابعة باستخدام Google</span>
+<i data-lucide="arrow-left"></i>
+</button>
+
+<button id="githubBtn" class="btn provider-btn github-btn" type="button">
+<span class="provider-icon github-icon"><i data-lucide="github"></i></span>
+<span>المتابعة باستخدام GitHub</span>
+<i data-lucide="arrow-left"></i>
+</button>
+
+<div class="or"><span>أو باستخدام رقم الهاتف</span></div>
+
+<label class="field-label" for="phoneIn">رقم الهاتف</label>
+<input id="phoneIn" type="tel" dir="ltr" placeholder="+20123456789" autocomplete="tel">
+
+<button id="phoneBtn" class="btn primary-btn" type="button">
+<i data-lucide="send"></i>
+<span>إرسال كود التحقق</span>
+</button>
+
+<div id="codeBox" class="code-box" hidden>
+<p class="muted small">افتح بوت تلجرام وشارك رقمك لاستلام كود التحقق.</p>
+<input id="codeIn" inputmode="numeric" maxlength="6" dir="ltr" placeholder="000000">
+<button id="codeBtn" class="btn primary-btn" type="button">تأكيد الكود</button>
+</div>
+
+<div class="auth-footer">
+<i data-lucide="shield-check"></i>
+<span>تسجيل دخول آمن لحسابك</span>
+</div>
+</div>
+</main>
+
+<!-- LINK PHONE -->
+<main id="plink" class="center auth-screen" hidden>
+<div class="card auth-card">
+<div class="section-icon"><i data-lucide="smartphone"></i></div>
+<h2>ربط رقم الهاتف</h2>
+<p class="muted small">اربط رقم هاتفك بحسابك لتسهيل التواصل.</p>
+
+<label class="field-label" for="plPhone">رقم الهاتف</label>
+<input id="plPhone" type="tel" dir="ltr" placeholder="+20123456789">
+
+<button id="plBtn" class="btn primary-btn" type="button">
+<i data-lucide="send"></i>
+إرسال كود التحقق
+</button>
+
+<div id="plBox" hidden>
+<input id="plCode" inputmode="numeric" maxlength="6" dir="ltr" placeholder="كود التحقق">
+<button id="plCodeBtn" class="btn primary-btn" type="button">تأكيد وربط الرقم</button>
+</div>
+
+<button id="plOut" class="btn ghost" type="button">
+<i data-lucide="arrow-right"></i>
+رجوع
+</button>
+</div>
+</main>
+
+<!-- PROFILE SETUP -->
+<main id="setup" class="center auth-screen" hidden>
+<div class="card auth-card">
+<div class="section-icon"><i data-lucide="user-round-plus"></i></div>
+<h2>أنشئ ملفك الشخصي</h2>
+<p class="muted small">خطوة بسيطة وتكون جاهز للدردشة.</p>
+
+<label class="field-label" for="suName">اسم العرض</label>
+<input id="suName" maxlength="30" placeholder="اكتب اسمك">
+
+<label class="field-label" for="suUser">اسم المستخدم</label>
+<input id="suUser" maxlength="20" dir="ltr" placeholder="username">
+
+<p class="muted small">اسم المستخدم فريد ولا يمكن تغييره لاحقًا.</p>
+
+<button id="suBtn" class="btn primary-btn" type="button">
+<i data-lucide="check"></i>
+إنشاء الحساب
+</button>
+
+<button id="suOut" class="btn ghost" type="button">تسجيل الخروج</button>
+</div>
+</main>
+
+<!-- MAIN APP -->
+<section id="app" class="app" hidden>
+
+<aside class="side">
+
+<header class="sidebar-header">
+<div class="brand">
+<img src="https://acrft.github.io/images/achat.png" alt="CloverChat">
+<div>
+<b>Clover<span>Chat</span></b>
+<small>مساحتك للتواصل</small>
+</div>
+</div>
+
+<button id="profBtn" class="icon-btn" type="button" title="الإعدادات" aria-label="الإعدادات">
+<i data-lucide="settings-2"></i>
+</button>
+</header>
+
+<div class="sidebar-label">المحادثات</div>
+
+<div class="search-wrap">
+<i data-lucide="search"></i>
+<input id="findIn" dir="ltr" placeholder="ابحث عن مستخدم...">
+<kbd>↵</kbd>
+</div>
+
+<div id="chatList" class="list"></div>
+
+<div class="sidebar-bottom">
+<div class="online-indicator"></div>
+<span>متصل بحسابك</span>
+<span class="version">CLOVERCHAT</span>
+</div>
+
+</aside>
+
+<!-- CHAT AREA -->
+<main class="pane">
+
+<div id="empty" class="empty-state">
+<div class="empty-art">
+<div class="empty-orbit orbit-one"></div>
+<div class="empty-orbit orbit-two"></div>
+<div class="empty-icon">
+<i data-lucide="messages-square"></i>
+</div>
+<div class="floating-icon float-one">
+<i data-lucide="message-circle"></i>
+</div>
+<div class="floating-icon float-two">
+<i data-lucide="sparkles"></i>
+</div>
+</div>
+
+<h2>كل محادثاتك في مكان واحد</h2>
+<p class="muted">اختر محادثة من القائمة أو ابحث عن شخص لبدء محادثة جديدة.</p>
+
+<div class="empty-hint">
+<i data-lucide="lock"></i>
+تواصل بسهولة مع أصدقائك
+</div>
+</div>
+
+<div id="room" hidden>
+
+<header class="chat-header">
+<button id="backBtn" class="icon-btn back" type="button" aria-label="رجوع">
+<i data-lucide="arrow-right"></i>
+</button>
+
+<img id="peerAv" class="av peer-avatar" alt="">
+
+<div class="peer-info">
+<b id="peerName"></b>
+<div id="peerUser" class="muted small" dir="ltr"></div>
+</div>
+
+<div class="header-actions">
+<span class="secure-label">
+<i data-lucide="shield-check"></i>
+محادثة
+</span>
+</div>
+</header>
+
+<div id="msgs" class="msgs"></div>
+
+<form id="form" class="message-composer" autocomplete="off">
+<button id="imgBtn" type="button" class="icon-btn attach-btn" title="إرفاق صورة" aria-label="إرفاق صورة">
+<i data-lucide="image-plus"></i>
+</button>
+
+<input id="imgIn" type="file" accept="image/*" hidden>
+
+<input id="msgIn" maxlength="500" placeholder="اكتب رسالتك هنا..." aria-label="اكتب رسالتك">
+
+<button class="send-btn" type="submit" title="إرسال" aria-label="إرسال">
+<i data-lucide="send"></i>
+</button>
+</form>
+
+</div>
+</main>
+</section>
+
+<!-- PROFILE MODAL -->
+<div id="modal" class="center modal" hidden>
+<div class="card profile-card">
+
+<div class="modal-heading">
+<div>
+<span class="eyebrow">ACCOUNT SETTINGS</span>
+<h2>ملفك الشخصي</h2>
+</div>
+
+<button id="pClose" class="icon-btn" type="button" aria-label="إغلاق">
+<i data-lucide="x"></i>
+</button>
+</div>
+
+<div class="profile-photo-wrap">
+<img id="pAv" class="logo round" alt="الصورة الشخصية">
+<button id="pPhoto" class="photo-edit" type="button" title="تغيير الصورة">
+<i data-lucide="camera"></i>
+</button>
+</div>
+
+<input id="pPhotoIn" type="file" accept="image/*" hidden>
+
+<label class="field-label" for="pName">الاسم</label>
+<input id="pName" maxlength="30" placeholder="اسمك">
+
+<label class="field-label" for="pUserIn">اسم المستخدم</label>
+<input id="pUserIn" dir="ltr" maxlength="20" placeholder="username">
+
+<label class="field-label" for="pBio">نبذة عنك</label>
+<textarea id="pBio" maxlength="120" rows="3" placeholder="اكتب نبذة قصيرة عنك..."></textarea>
+
+<div class="linked-title">الحسابات المرتبطة</div>
+<div id="linked"></div>
+
+<button id="pSave" class="btn primary-btn" type="button">
+<i data-lucide="save"></i>
+حفظ التغييرات
+</button>
+
+<button id="pOut" class="btn logout-btn" type="button">
+<i data-lucide="log-out"></i>
+تسجيل الخروج
+</button>
+
+</div>
+</div>
+
+</body>
+</html>
