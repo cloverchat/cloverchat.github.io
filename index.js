@@ -5,7 +5,7 @@ firebase.initializeApp({
   authDomain:"alamchat1.firebaseapp.com",
   databaseURL:"https://alamchat1-default-rtdb.firebaseio.com"
 });
-let telegramRequestId="",phone="";
+let phone="",phoneConfirmation=null,linkPhoneVerificationId=null,phoneRecaptcha=null,linkPhoneRecaptcha=null;
 const auth=firebase.auth(),db=firebase.database(),$=id=>document.getElementById(id);
 const WORKER="https://still-frost-fc39.eldinalam91.workers.dev";
 const NOAV="https://i.imgur.com/HeIi0wU.png";
@@ -108,43 +108,39 @@ async function social(provider){
 $("googleBtn").onclick=()=>social(new firebase.auth.GoogleAuthProvider());
 $("githubBtn").onclick=()=>social(new firebase.auth.GithubAuthProvider());
 
+function normalizePhone(value){
+ const p=String(value||"").replace(/[\s()-]/g,"");
+ if(!/^\+[1-9]\d{7,14}$/.test(p))throw new Error("اكتب الرقم بالصيغة الدولية، مثال: +201xxxxxxxxx");
+ return p;
+}
+function getRecaptcha(container,kind){
+ const key=kind==="link"?"linkPhoneRecaptcha":"phoneRecaptcha";
+ if(!window[key])window[key]=new firebase.auth.RecaptchaVerifier(container,{size:"invisible"},auth);
+ return window[key];
+}
 $("phoneBtn").onclick=async()=>{
- phone=$("phoneIn").value.replace(/\D/g,"");
- if(phone.length<8||phone.length>15)
-  return toast("اكتب رقمك مع كود الدولة");
- const b=$("phoneBtn");
- b.disabled=true;
+ const b=$("phoneBtn");b.disabled=true;
  try{
-  const d=await api("/otp/start",{phone});
+  phone=normalizePhone($("phoneIn").value);
+  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  phoneConfirmation=await auth.signInWithPhoneNumber(phone,getRecaptcha("recaptcha-container","login"));
   $("codeBox").hidden=false;
-  if(d.link){
-   toast("افتح بوت تلجرام واضغط Start ثم شارك رقمك");
-   window.open(d.link,"_blank");
-  }else{
-   toast("تم إرسال طلب التحقق إلى تلجرام");
-  }
+  toast("تم إرسال كود SMS إلى هاتفك");
  }catch(e){
-  toast(e.message||"تعذر إرسال طلب التحقق");
- }finally{
-  b.disabled=false;
- }
+  toast(e.message||"تعذر إرسال كود SMS");
+ }finally{b.disabled=false;}
 };
 $("codeBtn").onclick=async()=>{
- const b=$("codeBtn");
- b.disabled=true;
+ const b=$("codeBtn");b.disabled=true;
  try{
-  if(!phone)return toast("اكتب رقم الهاتف أولًا");
   const code=$("codeIn").value.trim();
-  if(!/^\d{6}$/.test(code))return toast("اكتب كود التحقق المكون من 6 أرقام");
-  const d=await api("/otp/verify",{phone,code});
-  if(!d.token)throw new Error("الخادم لم يرجع رمز تسجيل الدخول");
-  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  await auth.signInWithCustomToken(d.token);
- }catch(e){
-  toast(e.message||"فشل التحقق");
- }finally{
-  b.disabled=false;
- }
+  if(!/^\d{6}$/.test(code))throw new Error("اكتب كود التحقق المكون من 6 أرقام");
+  if(!phoneConfirmation)throw new Error("اطلب كود تحقق جديد أولًا");
+  await phoneConfirmation.confirm(code);
+  phoneConfirmation=null;
+  toast("تم تسجيل الدخول بنجاح");
+ }catch(e){toast(e.message||"فشل التحقق");}
+ finally{b.disabled=false;}
 };
 $("suOut").onclick=$("pOut").onclick=()=>auth.signOut();
 $("suBtn").onclick=async()=>{
@@ -345,26 +341,40 @@ $("pSave").onclick=async()=>{
  finally{b.disabled=false;}
 };
 $("plBtn").onclick=async()=>{
- lp=$("plPhone").value.replace(/\D/g,"");
- if(lp.length<8||lp.length>15)return toast("اكتب رقمك مع كود الدولة");
  const b=$("plBtn");b.disabled=true;
  try{
-  const d=await api("/otp/start",{phone:lp});$("plBox").hidden=false;
-  if(d.link){toast("افتح البوت واضغط Start وشارك رقمك");window.open(d.link,"_blank");}
-  else toast("تم إرسال طلب التحقق إلى تلجرام");
- }catch(e){toast(e.message||"تعذر إرسال طلب التحقق");}
+  lp=normalizePhone($("plPhone").value);
+  const verifier=getRecaptcha("link-recaptcha-container","link");
+  linkPhoneVerificationId=await new firebase.auth.PhoneAuthProvider(auth).verifyPhoneNumber(lp,verifier);
+  $("plBox").hidden=false;
+  toast("تم إرسال كود SMS إلى الرقم الجديد");
+ }catch(e){toast(e.message||"تعذر إرسال كود SMS");}
  finally{b.disabled=false;}
 };
 $("plCodeBtn").onclick=async()=>{
  const b=$("plCodeBtn");b.disabled=true;
  try{
   const code=$("plCode").value.trim();
-  if(!/^\d{6}$/.test(code))return toast("اكتب كود التحقق المكون من 6 أرقام");
-  await api("/otp/link",{phone:lp,code,idToken:await auth.currentUser.getIdToken()});
-  myPhone=lp;$("plBox").hidden=true;$("plCode").value="";
-  toast("تم ربط الرقم بالحساب ✅");show("app");renderLinked();$("modal").hidden=false;
- }catch(e){toast(e.message||"فشل ربط الرقم");}
- finally{b.disabled=false;}
+  if(!/^\d{6}$/.test(code))throw new Error("اكتب كود التحقق المكون من 6 أرقام");
+  if(!linkPhoneVerificationId)throw new Error("اطلب كود تحقق جديد أولًا");
+  const credential=firebase.auth.PhoneAuthProvider.credential(linkPhoneVerificationId,code);
+  const current=auth.currentUser;
+  if(!current)throw new Error("سجّل الدخول أولًا");
+  if(current.phoneNumber){
+   await current.updatePhoneNumber(credential);
+  }else{
+   await current.linkWithCredential(credential);
+  }
+  await current.reload();
+  myPhone=current.phoneNumber||lp;
+  linkPhoneVerificationId=null;
+  $("plBox").hidden=true;
+  $("plCode").value="";
+  toast("تم ربط الهاتف بالحساب الحالي بنجاح");
+  show("app");renderLinked();$("modal").hidden=false;
+ }catch(e){
+  toast(e.code==="auth/credential-already-in-use"||e.code==="auth/phone-number-already-exists"?"الرقم مرتبط بحساب آخر بالفعل":e.message||"فشل ربط الرقم");
+ }finally{b.disabled=false;}
 };
 $("plOut").onclick=()=>show("app");
 document.addEventListener("keydown",e=>{
