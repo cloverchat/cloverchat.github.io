@@ -263,16 +263,7 @@ async function push(m){
  up["userChats/"+peer.uid+"/"+cur]={with:me.uid,last,time:TS};
  await db.ref().update(up);
 }
-$("form").onsubmit=async e=>{
- e.preventDefault();if(sending)return;
- const input=$("msgIn"),text=input.value.trim();if(!text)return;
- sending=true;const b=$("form").querySelector('[type="submit"]');if(b)b.disabled=true;input.value="";
- try{await push({text:text.slice(0,500)});}
- catch(er){toast("تعذر الإرسال");input.value=text;}
- finally{sending=false;if(b)b.disabled=false;}
-   }
-};
-$("imgBtn").onclick=()=>$("imgIn").click();
+$("form").onsubmit
 $("imgIn").onchange=async e=>{
  const f=e.target.files[0];e.target.value="";if(!f)return;
  if(f.size>10*1024*1024)return toast("حجم الصورة كبير، اختر صورة أقل من 10MB");
