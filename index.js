@@ -6,6 +6,7 @@ firebase.initializeApp({
   authDomain:"alamchat1.firebaseapp.com",
   databaseURL:"https://alamchat1-default-rtdb.firebaseio.com"
 });
+let telegramRequestId="";
 const auth=firebase.auth(),db=firebase.database(),$=id=>document.getElementById(id);
 const WORKER="https://still-frost-fc39.eldinalam91.workers.dev";
 const NOAV="https://i.imgur.com/HeIi0wU.png";
@@ -85,27 +86,32 @@ async function social(provider){
 }
 $("googleBtn").onclick=()=>social(new firebase.auth.GoogleAuthProvider());
 $("githubBtn").onclick=()=>social(new firebase.auth.GithubAuthProvider());
+
 $("phoneBtn").onclick=async()=>{
- phone=$("phoneIn").value.replace(/\D/g,"");
- if(phone.length<8)return toast("اكتب رقمك مع كود الدولة");
  const b=$("phoneBtn");
  b.disabled=true;
  try{
-  const d=await api("/otp/start",{phone});
-  if(d.link)window.open(d.link,"_blank");
-  else toast("اتبعتلك الكود على تلجرام ✅");
+  const d=await api("/otp/start",{});
+  telegramRequestId=d.requestId;
   $("codeBox").hidden=false;
- }catch(e){toast(e.message);}
+  toast("افتح البوت واضغط Start لاستلام الكود");
+  window.location.href=d.link;
+ }catch(e){toast(e.message||"تعذر فتح Telegram");}
  finally{b.disabled=false;}
 };
 $("codeBtn").onclick=async()=>{
  const b=$("codeBtn");
  b.disabled=true;
  try{
-  const d=await api("/otp/verify",{phone,code:$("codeIn").value.trim()});
+  if(!telegramRequestId)return toast("اضغط إرسال الكود أولًا");
+  const d=await api("/otp/verify",{
+   requestId:telegramRequestId,
+   code:$("codeIn").value.trim()
+  });
+  telegramRequestId="";
   await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
   await auth.signInWithCustomToken(d.token);
- }catch(e){toast(e.message);}
+ }catch(e){toast(e.message||"فشل التحقق");}
  finally{b.disabled=false;}
 };
 $("suOut").onclick=$("pOut").onclick=()=>auth.signOut();
