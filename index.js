@@ -6,7 +6,7 @@ firebase.initializeApp({
   authDomain:"alamchat1.firebaseapp.com",
   databaseURL:"https://alamchat1-default-rtdb.firebaseio.com"
 });
-let telegramRequestId="";
+let telegramRequestId="",phone="";
 const auth=firebase.auth(),db=firebase.database(),$=id=>document.getElementById(id);
 const WORKER="https://still-frost-fc39.eldinalam91.workers.dev";
 const NOAV="https://i.imgur.com/HeIi0wU.png";
@@ -88,27 +88,28 @@ $("googleBtn").onclick=()=>social(new firebase.auth.GoogleAuthProvider());
 $("githubBtn").onclick=()=>social(new firebase.auth.GithubAuthProvider());
 
 $("phoneBtn").onclick=async()=>{
+ phone=$("phoneIn").value.replace(/\D/g,"");
+ if(phone.length<8||phone.length>15)return toast("اكتب رقمك مع كود الدولة");
  const b=$("phoneBtn");
  b.disabled=true;
  try{
-  const d=await api("/otp/start",{});
-  telegramRequestId=d.requestId;
+  const d=await api("/otp/start",{phone});
   $("codeBox").hidden=false;
-  toast("افتح البوت واضغط Start لاستلام الكود");
-  window.location.href=d.link;
- }catch(e){toast(e.message||"تعذر فتح Telegram");}
+  if(d.link){
+   toast("افتح بوت تلجرام واضغط Start ثم شارك رقمك");
+   window.open(d.link,"_blank");
+  }else toast("تم إرسال طلب التحقق إلى تلجرام");
+ }catch(e){toast(e.message||"تعذر إرسال طلب التحقق");}
  finally{b.disabled=false;}
 };
 $("codeBtn").onclick=async()=>{
  const b=$("codeBtn");
  b.disabled=true;
  try{
-  if(!telegramRequestId)return toast("اضغط إرسال الكود أولًا");
-  const d=await api("/otp/verify",{
-   requestId:telegramRequestId,
-   code:$("codeIn").value.trim()
-  });
-  telegramRequestId="";
+  if(!phone)return toast("اكتب رقم الهاتف أولًا");
+  const code=$("codeIn").value.trim();
+  if(!/^\d{6}$/.test(code))return toast("اكتب كود التحقق المكون من 6 أرقام");
+  const d=await api("/otp/verify",{phone,code});
   await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
   await auth.signInWithCustomToken(d.token);
  }catch(e){toast(e.message||"فشل التحقق");}
@@ -385,30 +386,34 @@ $("pSave").onclick=async()=>{
 };
 $("plBtn").onclick=async()=>{
  lp=$("plPhone").value.replace(/\D/g,"");
- if(lp.length<8)return toast("اكتب رقمك مع كود الدولة");
+ if(lp.length<8||lp.length>15)return toast("اكتب رقمك مع كود الدولة");
  const b=$("plBtn");
  b.disabled=true;
  try{
   const d=await api("/otp/start",{phone:lp});
-  if(d.link)window.open(d.link,"_blank");
-  else toast("اتبعتلك الكود على تلجرام ✅");
   $("plBox").hidden=false;
- }catch(e){toast(e.message);}
+  if(d.link){
+   toast("افتح البوت واضغط Start وشارك رقمك");
+   window.open(d.link,"_blank");
+  }else toast("تم إرسال طلب التحقق إلى تلجرام");
+ }catch(e){toast(e.message||"تعذر إرسال طلب التحقق");}
  finally{b.disabled=false;}
 };
 $("plCodeBtn").onclick=async()=>{
  const b=$("plCodeBtn");
  b.disabled=true;
  try{
-  await api("/otp/link",{phone:lp,code:$("plCode").value.trim(),idToken:await auth.currentUser.getIdToken()});
+  const code=$("plCode").value.trim();
+  if(!/^\d{6}$/.test(code))return toast("اكتب كود التحقق المكون من 6 أرقام");
+  await api("/otp/link",{phone:lp,code,idToken:await auth.currentUser.getIdToken()});
   myPhone=lp;
   $("plBox").hidden=true;
   $("plCode").value="";
-  toast("تم ربط الرقم ✅");
+  toast("تم ربط الرقم بالحساب ✅");
   show("app");
   renderLinked();
   $("modal").hidden=false;
- }catch(e){toast(e.message);}
+ }catch(e){toast(e.message||"فشل ربط الرقم");}
  finally{b.disabled=false;}
 };
 $("plOut").onclick=()=>show("app");
