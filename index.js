@@ -115,7 +115,15 @@ function normalizePhone(value){
 }
 function getRecaptcha(container,kind){
  const key=kind==="link"?"linkPhoneRecaptcha":"phoneRecaptcha";
- if(!window[key])window[key]=new firebase.auth.RecaptchaVerifier(container,{size:"invisible"},auth);
+ if(!window[key]){
+  window[key]=new firebase.auth.RecaptchaVerifier(container,{
+   size:"invisible",
+   callback:()=>{},
+   "expired-callback":()=>{
+    window[key]=null;
+   }
+  },firebase.app());
+ }
  return window[key];
 }
 $("phoneBtn").onclick=async()=>{
