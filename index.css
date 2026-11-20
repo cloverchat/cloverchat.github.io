@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 :root{
 --bg:#080d0b;--surface:#0d1511;--surface-2:#111d16;--surface-3:#17271d;--surface-hover:#1b3023;
 --green:#39df8b;--green-light:#70f2ad;--green-dark:#15965b;--green-soft:rgba(57,223,139,.1);
@@ -33,6 +32,7 @@ i[data-lucide]{display:inline-flex;align-items:center;justify-content:center}
 .logo{width:100%;height:100%;object-fit:cover;border-radius:19px}
 .brand-name{font-size:2.05rem;font-weight:900;letter-spacing:-1.2px}
 .brand-name span,.brand b span{color:var(--green)}
+.seo-heading{margin:7px 0 3px;font-size:1.02rem;line-height:1.7;font-weight:800;color:#d5e8da}
 .auth-description{margin:5px 0 25px}
 .muted{color:var(--muted)}
 .small{font-size:.83rem;line-height:1.8}
@@ -196,4 +196,4 @@ body{overflow:hidden}
 }
 @media(prefers-reduced-motion:reduce){
 *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
-}
+  }
