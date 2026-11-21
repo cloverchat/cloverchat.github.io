@@ -295,27 +295,73 @@ $("imgIn").onchange=async e=>{
  catch(er){toast(er.message||"تعذر إرسال الصورة");}
  finally{b.disabled=false;}
 };
-function renderLinked(){
- const box=$("linked");if(!box||!auth.currentUser)return;box.replaceChildren();
- const ids=(auth.currentUser.providerData||[]).map(x=>x.providerId);
- [["google.com","Google",()=>new firebase.auth.GoogleAuthProvider()],["github.com","GitHub",()=>new firebase.auth.GithubAuthProvider()]].forEach(([id,name,mk])=>{
-  const b=document.createElement("button");b.type="button";b.className="btn ghost";
-  b.textContent=ids.includes(id)?"✅ "+name+" مربوط":"ربط حساب "+name;b.disabled=ids.includes(id);
-  b.onclick=async()=>{
-   b.disabled=true;
+
+async function renderLinked(){
+ const box=$("linked"),current=auth.currentUser;
+ if(!box||!current)return;
+ box.replaceChildren();
+ await current.reload();
+ const ids=(current.providerData||[]).map(x=>x.providerId);
+ const methods=[["google.com","Google",()=>new firebase.auth.GoogleAuthProvider()],["github.com","GitHub",()=>new firebase.auth.GithubAuthProvider()]];
+ const phoneLinked=!!current.phoneNumber;
+ const total=ids.length;
+ function addButton(label,action,disabled=false){
+  const b=document.createElement("button");
+  b.type="button";
+  b.className="btn ghost";
+  b.textContent=label;
+  b.disabled=disabled;
+  b.onclick=action;
+  box.append(b);
+ }
+ for(const [id,name,makeProvider] of methods){
+  const linked=ids.includes(id);
+  addButton(linked?"✅ "+name+" مربوط — إلغاء الربط":"ربط حساب "+name,async()=>{
+   const b=[...box.querySelectorAll("button")].find(x=>x.textContent.includes(name));
+   if(b)b.disabled=true;
    try{
-    const current=auth.currentUser;
-    await current.linkWithPopup(mk());
-    await current.reload();
-    toast("تم الربط ✅");renderLinked();
+    const user=auth.currentUser;
+    if(linked){
+     await user.reload();
+     const providers=user.providerData||[];
+     if(providers.length<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+     await user.unlink(id);
+     toast("تم إلغاء ربط "+name);
+    }else{
+     await user.linkWithPopup(makeProvider());
+     toast("تم ربط "+name+" بالحساب الحالي");
+    }
+    await auth.currentUser.reload();
+    renderLinked();
    }catch(e){
-    toast(e.code==="auth/credential-already-in-use"?"الحساب ده مربوط بحساب تاني في CloverChat":e.message||"فشل الربط");b.disabled=false;
+    const messages={
+     "auth/credential-already-in-use":"وسيلة الدخول دي مرتبطة بحساب آخر",
+     "auth/provider-already-linked":"وسيلة الدخول مرتبطة بالفعل",
+     "auth/requires-recent-login":"سجّل الدخول مرة أخرى ثم حاول إلغاء الربط",
+     "auth/popup-closed-by-user":"تم إغلاق نافذة تسجيل الدخول"
+    };
+    toast(messages[e.code]||e.message||"تعذر تنفيذ العملية");
+    if(b)b.disabled=false;
    }
-  };box.append(b);
+  });
+ }
+ addButton(phoneLinked?"✅ الهاتف "+current.phoneNumber+" — إلغاء الربط":"ربط رقم هاتف",async()=>{
+  if(phoneLinked){
+   try{
+    await current.reload();
+    if((current.providerData||[]).length<=1)
+     throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+    await current.unlink("phone");
+    myPhone="";
+    toast("تم إلغاء ربط الهاتف");
+    renderLinked();
+   }catch(e){toast(e.message||"تعذر إلغاء ربط الهاتف");}
+  }else{
+   $("modal").hidden=true;
+   show("plink");
+  }
  });
- const pb=document.createElement("button");pb.type="button";pb.className="btn ghost";
- pb.disabled=!!myPhone;pb.textContent=myPhone?"✅ الهاتف +"+myPhone:"ربط رقم هاتف (اختياري)";
- pb.onclick=()=>{$("modal").hidden=true;show("plink");};box.append(pb);icons();
+ icons();
 }
 $("profBtn").onclick=()=>{
  newPhoto=null;$("pAv").src=prof.photo||NOAV;$("pName").value=prof.name||"";
