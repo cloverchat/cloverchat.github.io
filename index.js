@@ -295,7 +295,11 @@ $("imgIn").onchange=async e=>{
  catch(er){toast(er.message||"تعذر إرسال الصورة");}
  finally{b.disabled=false;}
 };
-
+function getLoginMethods(user){
+ const ids=new Set((user.providerData||[]).map(p=>p.providerId).filter(Boolean));
+ if(user.phoneNumber)ids.add("phone");
+ return ids;
+}
 async function renderLinked(){
  const box=$("linked"),current=auth.currentUser;
  if(!box||!current)return;
@@ -324,7 +328,7 @@ async function renderLinked(){
     if(linked){
      await user.reload();
      const providers=user.providerData||[];
-     if(providers.length<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+     if(getLoginMethods(user).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
      await user.unlink(id);
      toast("تم إلغاء ربط "+name);
     }else{
