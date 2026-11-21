@@ -298,6 +298,7 @@ $("imgIn").onchange=async e=>{
 function getLoginMethods(user){
  const ids=new Set((user.providerData||[]).map(p=>p.providerId).filter(Boolean));
  if(user.phoneNumber)ids.add("phone");
+ if(/^tg\d+$/.test(String(user.uid||"")))ids.add("telegram");
  return ids;
 }
 async function renderLinked(){
@@ -328,7 +329,8 @@ async function renderLinked(){
     if(linked){
      await user.reload();
      const providers=user.providerData||[];
-     if(getLoginMethods(user).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+     if(getLoginMethods(current).size<=1)
+     throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
      await user.unlink(id);
      toast("تم إلغاء ربط "+name);
     }else{
