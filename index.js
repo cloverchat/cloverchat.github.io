@@ -273,21 +273,21 @@ $("findIn").addEventListener("keydown",async e=>{
   e.target.value="";openChat(s.val());
  }catch(err){toast("تعذر البحث عن المستخدم");}
 });
+
 async function createGroup(name){
  name=String(name||"").trim();
  if(name.length<2||name.length>40)throw new Error("اسم المجموعة يجب أن يكون من حرفين إلى 40 حرفًا");
  const ref=db.ref("groups").push();
  const id=ref.key;
- const updates={};
- updates["groups/"+id+"/info"]={
+ const info={
   name,
   owner:me.uid,
   photo:"",
   createdAt:Date.now()
  };
- updates["groups/"+id+"/members/"+me.uid]=true;
- updates["userGroups/"+me.uid+"/"+id]=true;
- await db.ref().update(updates);
+ await ref.child("info").set(info);
+ await ref.child("members/"+me.uid).set(true);
+ await db.ref("userGroups/"+me.uid+"/"+id).set(true);
  $("groupModal").hidden=true;
  $("groupName").value="";
  toast("تم إنشاء المجموعة بنجاح");
