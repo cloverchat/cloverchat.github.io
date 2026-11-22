@@ -52,6 +52,7 @@
   "description":"منصة دردشة عربية للتواصل مع الأصدقاء ومشاركة الرسائل والصور."
 }
 </script>
+  
 <script defer src="https://unpkg.com/lucide@latest"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -163,9 +164,10 @@
 </header>
 <div class="sidebar-label group-heading">
 <span>المحادثات</span>
-<button id="createGroupBtn" class="create-group-btn" type="button" title="إنشاء مجموعة">
+<button id="createGroupBtn" class="create-group-btn" type="button" title="إنشاء مجموعة" onclick="document.getElementById('groupModal').hidden=false">
 <i data-lucide="plus"></i>
 <span>مجموعة</span>
+</button>
 </button>
 </div>
 <div class="search-wrap">
