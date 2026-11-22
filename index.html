@@ -161,7 +161,13 @@
 <i data-lucide="settings-2"></i>
 </button>
 </header>
-<div class="sidebar-label">المحادثات</div>
+<div class="sidebar-label group-heading">
+<span>المحادثات</span>
+<button id="createGroupBtn" class="create-group-btn" type="button" title="إنشاء مجموعة">
+<i data-lucide="plus"></i>
+<span>مجموعة</span>
+</button>
+</div>
 <div class="search-wrap">
 <i data-lucide="search"></i>
 <input id="findIn" dir="ltr" placeholder="ابحث عن مستخدم...">
@@ -231,6 +237,17 @@
 </main>
 </section>
 
+<div id="groupModal" class="center modal" hidden>
+<div class="card profile-card">
+<div class="modal-heading">
+<div><span class="eyebrow">CLOVERCHAT GROUPS</span><h2>إنشاء مجموعة</h2></div>
+<button id="groupClose" class="icon-btn" type="button"><i data-lucide="x"></i></button>
+</div>
+<label class="field-label" for="groupName">اسم المجموعة</label>
+<input id="groupName" maxlength="40" placeholder="اكتب اسم المجموعة">
+<button id="groupCreate" class="btn primary-btn" type="button">إنشاء المجموعة</button>
+</div>
+</div>
 <!-- PROFILE MODAL -->
 <div id="modal" class="center modal" hidden>
 <div class="card profile-card">
