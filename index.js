@@ -247,8 +247,23 @@ async function openChat(uid){
   msgRef.on("child_added",s=>{
    const m=s.val();if(!m||!m.uid)return;
    const d=document.createElement("div");d.className="m "+(m.uid===me.uid?"me":"");
-   if(G&&m.uid!==me.uid){const n=document.createElement("b");n.textContent=m.name||"بدون اسم";n.style.cssText="display:block;color:var(--p);font-size:.8rem";d.append(n);}
-   if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
+if(G){
+ const sender=document.createElement("div");
+ sender.className="group-sender";
+ const av=document.createElement("img");
+ av.className="group-sender-avatar";
+ av.src=m.photo||NOAV;
+ av.alt="";
+ av.onerror=()=>av.src=NOAV;
+ const name=document.createElement("b");
+ name.textContent=m.name||"مستخدم";
+ sender.append(av,name);
+ d.append(sender);
+ getUser(m.uid).then(u=>{
+  av.src=u.photo||m.photo||NOAV;
+ }).catch(()=>{});
+ }
+    if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
     const im=document.createElement("img");im.src=m.image;im.loading="lazy";im.alt="صورة مرسلة";
     im.onerror=()=>im.remove();im.onload=()=>box.scrollTop=box.scrollHeight;d.append(im);
    }
