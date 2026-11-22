@@ -11,7 +11,7 @@ const WORKER="https://still-frost-fc39.eldinalam91.workers.dev";
 const NOAV="https://i.imgur.com/HeIi0wU.png";
 const LOGO="https://acrft.github.io/images/achat.png";
 const TS=firebase.database.ServerValue.TIMESTAMP;
-let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null;
+let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null,groupListRef=null;
 const cache=Object.create(null);
 let myPhone="",newPhoto=null,lp="",sending=false,bootUid=null;
 
@@ -188,38 +188,79 @@ async function boot(){
  show("app");watchList();icons();
 }
 function stopAll(){
- if(msgRef)msgRef.off();if(listRef)listRef.off();
- msgRef=listRef=null;cur=peer=null;
+ if(msgRef)msgRef.off();
+ if(listRef)listRef.off();
+ if(groupListRef)groupListRef.off();
+ msgRef=listRef=groupListRef=null;
+ cur=peer=null;
  const room=$("room"),empty=$("empty"),list=$("chatList");
- if(room)room.hidden=true;if(empty)empty.hidden=false;if(list)list.replaceChildren();
+ if(room)room.hidden=true;
+ if(empty)empty.hidden=false;
+ if(list)list.replaceChildren();
 }
 function watchList(){
  if(listRef)listRef.off();
- listRef=db.ref("userChats/"+me.uid);
- listRef.on("value",async s=>{
+ if(groupListRef)groupListRef.off();
+ const uid=me.uid;
+ listRef=db.ref("userChats/"+uid);
+ const render=async()=>{
   try{
-   const items=[];s.forEach(c=>items.push({id:c.key,...(c.val()||{})}));
+   const s=await listRef.once("value");
+   if(!me||me.uid!==uid)return;
+   const items=[];
+   s.forEach(c=>items.push({id:c.key,...(c.val()||{})}));
    items.sort((a,b)=>(b.time||0)-(a.time||0));
-   const users=await Promise.all(items.map(i=>getUser(i.with)));
-   if(!me||!$("chatList"))return;
-   const box=$("chatList");box.replaceChildren();
-   const g=document.createElement("div");g.className="row"+(cur==="__global"?" on":"");
-   const ga=document.createElement("img");ga.className="av";ga.src=LOGO;
+   const users=await Promise.all(items.map(i=>getUser(i.with).catch(()=>({name:"مستخدم",photo:""}))));
+   const gs=await db.ref("userGroups/"+uid).once("value");
+   const groups=[];
+   const jobs=[];
+   gs.forEach(c=>jobs.push(db.ref("groups/"+c.key+"/info").once("value").then(x=>{
+    if(x.exists())groups.push({id:c.key,...x.val()});
+   }).catch(()=>{})));
+   await Promise.all(jobs);
+   if(!me||me.uid!==uid)return;
+   const box=$("chatList");
+   box.replaceChildren();
+   const g=document.createElement("div");
+   g.className="row"+(cur==="__global"?" on":"");
+   const ga=document.createElement("img");
+   ga.className="av";ga.src=LOGO;
    const gt=document.createElement("div");gt.className="t";
    const gn=document.createElement("b");gn.textContent="🌍 الشات العام";
-   const gl=document.createElement("div");gl.className="l";gl.textContent="📌 مجموعة مثبتة للجميع";
-   gt.append(gn,gl);g.append(ga,gt);g.onclick=()=>openChat("__global");box.append(g);
+   const gl=document.createElement("div");gl.className="l";gl.textContent="📌 محادثة عامة";
+   gt.append(gn,gl);g.append(ga,gt);
+   g.onclick=()=>openChat("__global");box.append(g);
+   groups.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+   groups.forEach(x=>{
+    const row=document.createElement("div");
+    row.className="row"+(cur==="__group:"+x.id?" on":"");
+    const av=document.createElement("img");
+    av.className="av";av.src=x.photo||LOGO;
+    const t=document.createElement("div");t.className="t";
+    const name=document.createElement("b");name.textContent="👥 "+x.name;
+    const sub=document.createElement("div");sub.className="l";sub.textContent="مجموعة";
+    t.append(name,sub);row.append(av,t);
+    row.onclick=()=>openGroup(x.id);box.append(row);
+   });
    items.forEach((i,n)=>{
-    const u=users[n],row=document.createElement("div");row.className="row"+(i.id===cur?" on":"");
-    const av=document.createElement("img");av.className="av";av.src=u.photo||NOAV;av.onerror=()=>av.src=NOAV;
+    const u=users[n],row=document.createElement("div");
+    row.className="row"+(i.id===cur?" on":"");
+    const av=document.createElement("img");
+    av.className="av";av.src=u.photo||NOAV;
+    av.onerror=()=>av.src=NOAV;
     const t=document.createElement("div");t.className="t";
     const nm=document.createElement("b");nm.textContent=u.name||"مستخدم";
     const l=document.createElement("div");l.className="l";l.textContent=i.last||"";
     const tm=document.createElement("small");tm.className="muted";tm.textContent=fmt(i.time);
-    t.append(nm,l);row.append(av,t,tm);row.onclick=()=>openChat(u.uid);box.append(row);
-   });icons();
+    t.append(nm,l);row.append(av,t,tm);
+    row.onclick=()=>openChat(u.uid);box.append(row);
+   });
+   icons();
   }catch(e){console.error(e);toast("تعذر تحميل قائمة المحادثات");}
- });
+ };
+ listRef.on("value",render);
+ groupListRef=db.ref("userGroups/"+uid);
+ groupListRef.on("value",render);
 }
 $("findIn").addEventListener("keydown",async e=>{
  if(e.key!=="Enter")return;e.preventDefault();
@@ -232,11 +273,131 @@ $("findIn").addEventListener("keydown",async e=>{
   e.target.value="";openChat(s.val());
  }catch(err){toast("تعذر البحث عن المستخدم");}
 });
+async function createGroup(name){
+ name=String(name||"").trim();
+ if(name.length<2||name.length>40)throw new Error("اسم المجموعة يجب أن يكون من حرفين إلى 40 حرفًا");
+ const ref=db.ref("groups").push();
+ const id=ref.key;
+ const updates={};
+ updates["groups/"+id+"/info"]={
+  name,
+  owner:me.uid,
+  photo:"",
+  createdAt:Date.now()
+ };
+ updates["groups/"+id+"/members/"+me.uid]=true;
+ updates["userGroups/"+me.uid+"/"+id]=true;
+ await db.ref().update(updates);
+ $("groupModal").hidden=true;
+ $("groupName").value="";
+ toast("تم إنشاء المجموعة بنجاح");
+ await openGroup(id);
+}
+async function openGroup(id){
+ try{
+  const s=await db.ref("groups/"+id+"/info").once("value");
+  if(!s.exists())throw new Error("المجموعة غير موجودة");
+  const info=s.val();
+  peer={
+   uid:id,
+   name:info.name||"مجموعة",
+   photo:info.photo||LOGO,
+   group:true,
+   owner:info.owner
+  };
+  cur="__group:"+id;
+  $("empty").hidden=true;
+  $("room").hidden=false;
+  $("app").classList.add("open");
+  $("peerName").textContent=peer.name;
+  $("peerUser").textContent="مجموعة";
+  $("peerAv").src=peer.photo;
+  $("peerAv").onerror=()=>$("peerAv").src=LOGO;
+  $("roomType").textContent="مجموعة";
+  $("groupAddBtn").hidden=me.uid!==info.owner;
+  if(msgRef)msgRef.off();
+  const box=$("msgs");
+  box.replaceChildren();
+  msgRef=db.ref("groups/"+id+"/messages").limitToLast(100);
+  msgRef.on("child_added",s=>{
+   const m=s.val();
+   if(!m||!m.uid)return;
+   const d=document.createElement("div");
+   d.className="m "+(m.uid===me.uid?"me":"");
+   const sender=document.createElement("div");
+   sender.className="group-sender";
+   const av=document.createElement("img");
+   av.className="group-sender-avatar";
+   av.src=m.photo||NOAV;
+   av.onerror=()=>av.src=NOAV;
+   const name=document.createElement("b");
+   name.textContent=m.name||"مستخدم";
+   sender.append(av,name);
+   d.append(sender);
+   if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
+    const im=document.createElement("img");
+    im.src=m.image;im.loading="lazy";im.alt="صورة مرسلة";
+    im.onerror=()=>im.remove();
+    im.onload=()=>box.scrollTop=box.scrollHeight;
+    d.append(im);
+   }
+   if(m.text)d.append(document.createTextNode(String(m.text).slice(0,500)));
+   const tm=document.createElement("i");
+   tm.textContent=fmt(m.time);
+   d.append(tm);box.append(d);
+   box.scrollTop=box.scrollHeight;
+  },e=>{console.error(e);toast("تعذر تحميل رسائل المجموعة");});
+ }catch(e){
+  console.error(e);
+  toast(e.message||"تعذر فتح المجموعة");
+ }
+}
+async function addGroupMember(){
+ if(!peer?.group||peer.owner!==me.uid)return;
+ const username=prompt("اكتب اسم المستخدم للشخص الذي تريد إضافته:");
+ if(username===null)return;
+ const u=username.trim().toLowerCase().replace(/^@/,"");
+ if(!/^[a-z0-9_]{3,20}$/.test(u))return toast("اسم المستخدم غير صحيح");
+ try{
+  const s=await db.ref("usernames/"+u).once("value");
+  if(!s.exists())return toast("المستخدم غير موجود");
+  const uid=s.val();
+  if(uid===me.uid)return toast("أنت عضو في المجموعة بالفعل");
+  const updates={};
+  updates["groups/"+peer.uid+"/members/"+uid]=true;
+  updates["userGroups/"+uid+"/"+peer.uid]=true;
+  await db.ref().update(updates);
+  toast("تمت إضافة العضو");
+ }catch(e){
+  console.error(e);
+  toast("تعذرت إضافة العضو");
+ }
+}
+$("createGroupBtn").onclick=()=>{
+ $("groupName").value="";
+ $("groupModal").hidden=false;
+ $("groupName").focus();
+ icons();
+};
+$("groupClose").onclick=()=>$("groupModal").hidden=true;
+$("groupCreate").onclick=async()=>{
+ const b=$("groupCreate");
+ b.disabled=true;
+ try{await createGroup($("groupName").value);}
+ catch(e){toast(e.message||"تعذر إنشاء المجموعة");}
+ finally{b.disabled=false;}
+};
+$("groupName").addEventListener("keydown",e=>{
+ if(e.key==="Enter")$("groupCreate").click();
+});
+$("groupAddBtn").onclick=addGroupMember;
 async function openChat(uid){
  try{
   const G=uid==="__global";
   peer=G?{uid:"__global",name:"🌍 الشات العام",photo:LOGO,global:true}:await getUser(uid);
   cur=G?"__global":cid(me.uid,uid);
+  $("roomType").textContent=G?"شات عام":"محادثة";
+  $("groupAddBtn").hidden=true;
   $("empty").hidden=true;$("room").hidden=false;$("app").classList.add("open");
   $("peerName").textContent=peer.name||"مستخدم";
   $("peerUser").textContent=G?"مجموعة عامة":(peer.username?"@"+peer.username:"");
@@ -275,7 +436,24 @@ if(G){
 $("backBtn").onclick=()=>$("app").classList.remove("open");
 async function push(m){
  if(!cur||!peer||!me||!prof)throw new Error("افتح محادثة صالحة أولًا");
- if(peer.global)return db.ref("chat").push({uid:me.uid,name:prof.name||"مستخدم",photo:prof.photo||"",...m,time:TS});
+ if(peer.group){
+  return db.ref("groups/"+peer.uid+"/messages").push({
+   uid:me.uid,
+   name:prof.name||"مستخدم",
+   photo:prof.photo||"",
+   ...m,
+   time:TS
+  });
+ }
+ if(peer.global){
+  return db.ref("chat").push({
+   uid:me.uid,
+   name:prof.name||"مستخدم",
+   photo:prof.photo||"",
+   ...m,
+   time:TS
+  });
+ }
  const up={},last=m.text||"📷 صورة",id=db.ref().push().key;
  up["chats/"+cur+"/messages/"+id]={uid:me.uid,...m,time:TS};
  up["userChats/"+me.uid+"/"+cur]={with:peer.uid,last,time:TS};
