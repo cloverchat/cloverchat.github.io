@@ -410,3 +410,5 @@ border-radius:25px;
 @media(prefers-reduced-motion:reduce){
 .auth-card,.btn{transition:none}
 }
+.group-sender{display:flex;align-items:center;gap:8px;margin-bottom:7px;color:var(--green-light);font-size:.78rem;font-weight:800}
+.group-sender-avatar{width:27px;height:27px;object-fit:cover;border-radius:9px;border:1px solid rgba(112,242,173,.3);background:var(--surface-3)}
