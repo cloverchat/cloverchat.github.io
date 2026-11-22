@@ -412,3 +412,13 @@ border-radius:25px;
 }
 .group-sender{display:flex;align-items:center;gap:8px;margin-bottom:7px;color:var(--green-light);font-size:.78rem;font-weight:800}
 .group-sender-avatar{width:27px;height:27px;object-fit:cover;border-radius:9px;border:1px solid rgba(112,242,173,.3);background:var(--surface-3)}
+.group-heading{display:flex;align-items:center;justify-content:space-between;padding-inline:20px}
+.create-group-btn{display:flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid rgba(155,123,255,.25);border-radius:10px;background:rgba(155,123,255,.09);color:#c7b6ff;font-size:.73rem;font-weight:800;transition:.2s}
+.create-group-btn:hover{background:rgba(155,123,255,.18);transform:translateY(-1px)}
+.create-group-btn svg{width:15px;height:15px}
+.group-sender{display:flex;align-items:center;gap:8px;margin-bottom:7px;color:#bdaaff;font-size:.78rem;font-weight:800}
+.group-sender-avatar{width:27px;height:27px;object-fit:cover;border-radius:9px;border:1px solid rgba(155,123,255,.3);background:#202438}
+.group-message-name{cursor:pointer}
+.group-message-name:hover{text-decoration:underline}
+#groupAddBtn{color:#bdaaff;border-color:rgba(155,123,255,.2);background:rgba(155,123,255,.08)}
+#groupAddBtn:hover{background:rgba(155,123,255,.18)}
