@@ -274,25 +274,34 @@ $("findIn").addEventListener("keydown",async e=>{
  }catch(err){toast("تعذر البحث عن المستخدم");}
 });
 
+
 async function createGroup(name){
  name=String(name||"").trim();
  if(name.length<2||name.length>40)throw new Error("اسم المجموعة يجب أن يكون من حرفين إلى 40 حرفًا");
  const ref=db.ref("groups").push();
  const id=ref.key;
- const info={
-  name,
-  owner:me.uid,
-  photo:"",
-  createdAt:Date.now()
- };
- await ref.child("info").set(info);
- await ref.child("members/"+me.uid).set(true);
- await db.ref("userGroups/"+me.uid+"/"+id).set(true);
+ const steps=[
+  ["معلومات المجموعة",()=>ref.child("info").set({
+   name,owner:me.uid,photo:"",createdAt:Date.now()
+  })],
+  ["إضافة المالك كعضو",()=>ref.child("members/"+me.uid).set(true)],
+  ["إضافة المجموعة لقائمتك",()=>db.ref("userGroups/"+me.uid+"/"+id).set(true)]
+ ];
+ for(const [label,run] of steps){
+  try{
+   await run();
+  }catch(e){
+   console.error("Group creation failed:",label,e);
+   toast(label+": "+(e.code||e.message||"Permission denied"));
+   return;
+  }
+ }
  $("groupModal").hidden=true;
  $("groupName").value="";
  toast("تم إنشاء المجموعة بنجاح");
  await openGroup(id);
 }
+
 async function openGroup(id){
  try{
   const s=await db.ref("groups/"+id+"/info").once("value");
