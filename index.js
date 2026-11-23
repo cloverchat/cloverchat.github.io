@@ -14,6 +14,7 @@ const TS=firebase.database.ServerValue.TIMESTAMP;
 let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null;
 const cache=Object.create(null);
 let myPhone="",newPhoto=null,lp="",sending=false,bootUid=null;
+let chatOpenToken=0,listRenderToken=0;
 
 function icons(){
  if(window.lucide?.createIcons)window.lucide.createIcons();
@@ -22,6 +23,8 @@ function toast(t){
  const e=$("toast");
  if(!e)return;
  e.textContent=String(t||"حدث خطأ");
+ e.setAttribute("role","status");
+ e.setAttribute("aria-live","polite");
  e.classList.add("show");
  clearTimeout(toast.t);
  toast.t=setTimeout(()=>e.classList.remove("show"),3500);
@@ -188,6 +191,7 @@ async function boot(){
  show("app");watchList();icons();
 }
 function stopAll(){
+ chatOpenToken++;listRenderToken++;
  if(msgRef)msgRef.off();if(listRef)listRef.off();
  msgRef=listRef=null;cur=peer=null;
  const room=$("room"),empty=$("empty"),list=$("chatList");
@@ -197,21 +201,22 @@ function watchList(){
  if(listRef)listRef.off();
  listRef=db.ref("userChats/"+me.uid);
  listRef.on("value",async s=>{
+  const renderId=++listRenderToken;
   try{
    const items=[];s.forEach(c=>items.push({id:c.key,...(c.val()||{})}));
    items.sort((a,b)=>(b.time||0)-(a.time||0));
    const users=await Promise.all(items.map(i=>getUser(i.with)));
-   if(!me||!$("chatList"))return;
+   if(renderId!==listRenderToken||!me||!$("chatList"))return;
    const box=$("chatList");box.replaceChildren();
    const g=document.createElement("div");g.className="row"+(cur==="__global"?" on":"");
-   const ga=document.createElement("img");ga.className="av";ga.src=LOGO;
+   const ga=document.createElement("img");ga.className="av";ga.src=LOGO;ga.alt="";
    const gt=document.createElement("div");gt.className="t";
    const gn=document.createElement("b");gn.textContent="🌍 الشات العام";
    const gl=document.createElement("div");gl.className="l";gl.textContent="📌 مجموعة مثبتة للجميع";
    gt.append(gn,gl);g.append(ga,gt);g.onclick=()=>openChat("__global");box.append(g);
    items.forEach((i,n)=>{
     const u=users[n],row=document.createElement("div");row.className="row"+(i.id===cur?" on":"");
-    const av=document.createElement("img");av.className="av";av.src=u.photo||NOAV;av.onerror=()=>av.src=NOAV;
+    const av=document.createElement("img");av.className="av";av.src=u.photo||NOAV;av.alt="";av.onerror=()=>av.src=NOAV;
     const t=document.createElement("div");t.className="t";
     const nm=document.createElement("b");nm.textContent=u.name||"مستخدم";
     const l=document.createElement("div");l.className="l";l.textContent=i.last||"";
@@ -233,9 +238,12 @@ $("findIn").addEventListener("keydown",async e=>{
  }catch(err){toast("تعذر البحث عن المستخدم");}
 });
 async function openChat(uid){
+ const openId=++chatOpenToken;
  try{
   const G=uid==="__global";
-  peer=G?{uid:"__global",name:"🌍 الشات العام",photo:LOGO,global:true}:await getUser(uid);
+  const nextPeer=G?{uid:"__global",name:"🌍 الشات العام",photo:LOGO,global:true}:await getUser(uid);
+  if(openId!==chatOpenToken||!me)return;
+  peer=nextPeer;
   cur=G?"__global":cid(me.uid,uid);
   $("empty").hidden=true;$("room").hidden=false;$("app").classList.add("open");
   $("peerName").textContent=peer.name||"مستخدم";
@@ -245,26 +253,28 @@ async function openChat(uid){
   const box=$("msgs");box.replaceChildren();
   msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).limitToLast(100);
   msgRef.on("child_added",s=>{
+   if(openId!==chatOpenToken)return;
    const m=s.val();if(!m||!m.uid)return;
    const d=document.createElement("div");d.className="m "+(m.uid===me.uid?"me":"");
-   if(G&&m.uid!==me.uid){const n=document.createElement("b");n.textContent=m.name||"بدون اسم";n.style.cssText="display:block;color:var(--p);font-size:.8rem";d.append(n);}
+   if(G&&m.uid!==me.uid){const n=document.createElement("b");n.textContent=m.name||"بدون اسم";n.style.cssText="display:block;color:var(--green-light);font-size:.8rem";d.append(n);}
    if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
     const im=document.createElement("img");im.src=m.image;im.loading="lazy";im.alt="صورة مرسلة";
-    im.onerror=()=>im.remove();im.onload=()=>box.scrollTop=box.scrollHeight;d.append(im);
+    im.onerror=()=>im.remove();im.onload=()=>{if(openId===chatOpenToken)box.scrollTop=box.scrollHeight;};d.append(im);
    }
    if(m.text)d.append(document.createTextNode(String(m.text).slice(0,500)));
    const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);box.append(d);box.scrollTop=box.scrollHeight;
-  },e=>{console.error(e);toast("تعذر تحميل الرسائل");});
- }catch(e){console.error(e);toast("تعذر فتح المحادثة");}
+  },e=>{if(openId!==chatOpenToken)return;console.error(e);toast("تعذر تحميل الرسائل");});
+ }catch(e){if(openId===chatOpenToken){console.error(e);toast("تعذر فتح المحادثة");}}
 }
 $("backBtn").onclick=()=>$("app").classList.remove("open");
 async function push(m){
  if(!cur||!peer||!me||!prof)throw new Error("افتح محادثة صالحة أولًا");
- if(peer.global)return db.ref("chat").push({uid:me.uid,name:prof.name||"مستخدم",photo:prof.photo||"",...m,time:TS});
+ const targetPeer=peer,targetChat=cur,sender=me,senderProfile=prof;
+ if(targetPeer.global)return db.ref("chat").push({uid:sender.uid,name:senderProfile.name||"مستخدم",photo:senderProfile.photo||"",...m,time:TS});
  const up={},last=m.text||"📷 صورة",id=db.ref().push().key;
- up["chats/"+cur+"/messages/"+id]={uid:me.uid,...m,time:TS};
- up["userChats/"+me.uid+"/"+cur]={with:peer.uid,last,time:TS};
- up["userChats/"+peer.uid+"/"+cur]={with:me.uid,last,time:TS};
+ up["chats/"+targetChat+"/messages/"+id]={uid:sender.uid,...m,time:TS};
+ up["userChats/"+sender.uid+"/"+targetChat]={with:targetPeer.uid,last,time:TS};
+ up["userChats/"+targetPeer.uid+"/"+targetChat]={with:sender.uid,last,time:TS};
  await db.ref().update(up);
 }
 $("form").onsubmit=async e=>{
@@ -280,7 +290,8 @@ $("form").onsubmit=async e=>{
   await push({text:text.slice(0,500)});
  }catch(er){
   toast("تعذر الإرسال");
-  input.value=text;
+  if(!input.value)input.value=text;
+  else input.value=text+"\n"+input.value;
  }finally{
   sending=false;
   if(b)b.disabled=false;
@@ -289,6 +300,7 @@ $("form").onsubmit=async e=>{
 $("imgBtn").onclick=()=>$("imgIn").click();
 $("imgIn").onchange=async e=>{
  const f=e.target.files[0];e.target.value="";if(!f)return;
+ if(!f.type?.startsWith("image/"))return toast("الملف المختار ليس صورة");
  if(f.size>10*1024*1024)return toast("حجم الصورة كبير، اختر صورة أقل من 10MB");
  const b=$("imgBtn");b.disabled=true;
  try{await push({image:await shrink(f,1000,.7)});}
@@ -309,7 +321,6 @@ async function renderLinked(){
  const ids=(current.providerData||[]).map(x=>x.providerId);
  const methods=[["google.com","Google",()=>new firebase.auth.GoogleAuthProvider()],["github.com","GitHub",()=>new firebase.auth.GithubAuthProvider()]];
  const phoneLinked=!!current.phoneNumber;
- const total=ids.length;
  function addButton(label,action,disabled=false){
   const b=document.createElement("button");
   b.type="button";
@@ -328,9 +339,7 @@ async function renderLinked(){
     const user=auth.currentUser;
     if(linked){
      await user.reload();
-     const providers=user.providerData||[];
-     if(getLoginMethods(current).size<=1)
-     throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+     if(getLoginMethods(user).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
      await user.unlink(id);
      toast("تم إلغاء ربط "+name);
     }else{
@@ -355,8 +364,7 @@ async function renderLinked(){
   if(phoneLinked){
    try{
     await current.reload();
-    if((current.providerData||[]).length<=1)
-     throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+    if(getLoginMethods(current).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
     await current.unlink("phone");
     myPhone="";
     toast("تم إلغاء ربط الهاتف");
@@ -385,11 +393,13 @@ $("pSave").onclick=async()=>{
  const up={name:$("pName").value.trim()||prof.name,bio:$("pBio").value.trim()};
  if(newPhoto)up.photo=newPhoto;
  const nu=$("pUserIn").value.trim().toLowerCase().replace(/^@/,""),old=prof.username;
+ let claimedUsername=false;
  try{
   if(nu!==old){
-   if(!/^[a-z0-9_]{3,20}$/.test(nu))return toast("اليوزر 3-20 حرف: إنجليزي وأرقام و _");
+   if(!/^[a-z0-9_]{3,20}$/.test(nu))throw new Error("اليوزر 3-20 حرف: إنجليزي وأرقام و _");
    const r=await db.ref("usernames/"+nu).transaction(v=>v===null?me.uid:undefined);
-   if(!r.committed)return toast("اليوزر مستخدم، جرّب غيره");
+   if(!r.committed)throw new Error("اليوزر مستخدم، جرّب غيره");
+   claimedUsername=true;
    up.username=nu;
   }
   await db.ref("users/"+me.uid).update(up);
@@ -397,8 +407,10 @@ $("pSave").onclick=async()=>{
   prof={...prof,...up};cache[me.uid]={uid:me.uid,...prof};
   const avatar=$("meAv");if(avatar)avatar.src=prof.photo||NOAV;
   $("modal").hidden=true;toast("تم الحفظ ✅");
- }catch(e){toast("تعذر الحفظ");}
- finally{b.disabled=false;}
+ }catch(e){
+  if(claimedUsername)await db.ref("usernames/"+nu).transaction(v=>v===me?.uid?null:v).catch(()=>{});
+  toast(e.message||"تعذر الحفظ");
+ }finally{b.disabled=false;}
 };
 $("plBtn").onclick=async()=>{
  const b=$("plBtn");b.disabled=true;
@@ -444,3 +456,19 @@ document.addEventListener("keydown",e=>{
  }
 });
 document.addEventListener("DOMContentLoaded",icons);icons();
+
+/* ── Quality-of-life safeguards ───────────────────────────────────── */
+window.addEventListener("online",()=>toast("عاد الاتصال بالإنترنت"));
+window.addEventListener("offline",()=>toast("الاتصال بالإنترنت منقطع — الرسائل لن تُرسل حاليًا"));
+window.addEventListener("error",e=>{
+ console.error("CloverChat runtime error:",e.error||e.message);
+});
+window.addEventListener("unhandledrejection",e=>{
+ console.error("CloverChat async error:",e.reason);
+});
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="visible"&&auth.currentUser&&me?.uid!==bootUid){
+  bootUid=me.uid;
+  boot().catch(e=>{console.error(e);toast("تعذر تحديث بيانات الحساب");});
+ }
+});
