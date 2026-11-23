@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090b10">
+<meta name="theme-color" content="#101c20">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="CloverChat — منصة دردشة عربية عصرية للتواصل مع أصدقائك ومشاركة الرسائل والصور بسهولة.">
 <meta name="keywords" content="CloverChat, دردشة, شات عربي, محادثات, رسائل">
@@ -27,6 +27,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preload" as="image" href="https://acrft.github.io/images/achat.png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./index.css">
 <script defer src="https://unpkg.com/lucide@latest"></script>
@@ -36,174 +37,119 @@
 <script defer src="./index.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#app">تخطي إلى المحادثات</a>
 <div class="ambient ambient-one" aria-hidden="true"></div>
 <div class="ambient ambient-two" aria-hidden="true"></div>
-<div id="toast" role="status" aria-live="polite"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<!-- LOGIN -->
+<!-- LOGIN: keep IDs synchronized with index.js -->
 <main id="login" class="center auth-screen" hidden>
 <div class="card auth-card">
-<div class="brand-mark">
-<img class="logo" src="https://acrft.github.io/images/achat.png" alt="CloverChat" width="76" height="76">
-</div>
-<div class="brand-name">Clover<span>Chat</span></div>
+<div class="brand-mark"><img class="logo" src="https://acrft.github.io/images/achat.png" alt="شعار CloverChat" width="160" height="160" fetchpriority="high"></div>
+<div class="brand-name" aria-label="CloverChat">Clover<span>Chat</span></div>
 <h1 class="seo-heading">دردشة عربية تجمعك بأصدقائك</h1>
 <p class="muted auth-description">مساحتك الخاصة للتواصل والدردشة.</p>
 <div class="auth-divider"><span>ابدأ رحلتك</span></div>
-<button id="googleBtn" class="btn provider-btn" type="button">
-<span class="provider-icon google-icon">G</span>
-<span>المتابعة باستخدام Google</span>
-<i data-lucide="arrow-left" aria-hidden="true"></i>
-</button>
-<button id="githubBtn" class="btn provider-btn github-btn" type="button">
-<span class="provider-icon github-icon"><i data-lucide="github"></i></span>
-<span>المتابعة باستخدام GitHub</span>
-<i data-lucide="arrow-left" aria-hidden="true"></i>
-</button>
+<button id="googleBtn" class="btn provider-btn" type="button"><span class="provider-icon google-icon" aria-hidden="true">G</span><span>المتابعة باستخدام Google</span><i data-lucide="arrow-left" aria-hidden="true"></i></button>
+<button id="githubBtn" class="btn provider-btn github-btn" type="button"><span class="provider-icon github-icon"><i data-lucide="github" aria-hidden="true"></i></span><span>المتابعة باستخدام GitHub</span><i data-lucide="arrow-left" aria-hidden="true"></i></button>
 <div class="or"><span>أو باستخدام رقم الهاتف</span></div>
 <label class="field-label" for="phoneIn">رقم الهاتف</label>
-<input id="phoneIn" type="tel" dir="ltr" placeholder="+20123456789" autocomplete="tel">
+<input id="phoneIn" type="tel" dir="ltr" inputmode="tel" placeholder="+20123456789" autocomplete="tel">
 <div id="recaptcha-container"></div>
-<button id="phoneBtn" class="btn primary-btn" type="button">
-<i data-lucide="send"></i>
-<span>إرسال كود التحقق</span>
-</button>
+<button id="phoneBtn" class="btn primary-btn" type="button"><i data-lucide="send" aria-hidden="true"></i><span>إرسال كود التحقق</span></button>
 <div id="codeBox" class="code-box" hidden>
 <p class="muted small">أدخل كود التحقق المرسل إلى هاتفك عبر SMS.</p>
+<label class="field-label" for="codeIn">كود التحقق</label>
 <input id="codeIn" inputmode="numeric" maxlength="6" dir="ltr" placeholder="000000" autocomplete="one-time-code">
 <button id="codeBtn" class="btn primary-btn" type="button">تأكيد الكود</button>
 </div>
-<div class="auth-footer">
-<i data-lucide="shield-check"></i>
-<span>تسجيل دخول آمن لحسابك</span>
-</div>
+<div class="auth-footer"><i data-lucide="shield-check" aria-hidden="true"></i><span>تسجيل دخول آمن لحسابك</span></div>
 </div>
 </main>
 
 <!-- LINK PHONE -->
 <main id="plink" class="center auth-screen" hidden>
 <div class="card auth-card">
-<div class="section-icon"><i data-lucide="smartphone"></i></div>
+<div class="section-icon"><i data-lucide="smartphone" aria-hidden="true"></i></div>
 <h2>ربط رقم الهاتف</h2>
 <p class="muted small">اربط رقم هاتفك بحسابك لتسهيل التواصل.</p>
 <label class="field-label" for="plPhone">رقم الهاتف</label>
-<input id="plPhone" type="tel" dir="ltr" placeholder="+20123456789" autocomplete="tel">
+<input id="plPhone" type="tel" dir="ltr" inputmode="tel" placeholder="+20123456789" autocomplete="tel">
 <div id="link-recaptcha-container"></div>
-<button id="plBtn" class="btn primary-btn" type="button">
-<i data-lucide="send"></i>
-إرسال كود التحقق
-</button>
+<button id="plBtn" class="btn primary-btn" type="button"><i data-lucide="send" aria-hidden="true"></i>إرسال كود التحقق</button>
 <div id="plBox" hidden>
+<label class="field-label" for="plCode">كود التحقق</label>
 <input id="plCode" inputmode="numeric" maxlength="6" dir="ltr" placeholder="كود التحقق" autocomplete="one-time-code">
 <button id="plCodeBtn" class="btn primary-btn" type="button">تأكيد وربط الرقم</button>
 </div>
-<button id="plOut" class="btn ghost" type="button">
-<i data-lucide="arrow-right"></i>
-رجوع
-</button>
+<button id="plOut" class="btn ghost" type="button"><i data-lucide="arrow-right" aria-hidden="true"></i>رجوع</button>
 </div>
 </main>
 
 <!-- PROFILE SETUP -->
 <main id="setup" class="center auth-screen" hidden>
 <div class="card auth-card">
-<div class="section-icon"><i data-lucide="user-round-plus"></i></div>
+<div class="section-icon"><i data-lucide="user-round-plus" aria-hidden="true"></i></div>
 <h2>أنشئ ملفك الشخصي</h2>
 <p class="muted small">خطوة بسيطة وتكون جاهز للدردشة.</p>
 <label class="field-label" for="suName">اسم العرض</label>
 <input id="suName" maxlength="30" placeholder="اكتب اسمك" autocomplete="name">
 <label class="field-label" for="suUser">اسم المستخدم</label>
-<input id="suUser" maxlength="20" dir="ltr" placeholder="username" autocomplete="username">
+<input id="suUser" maxlength="20" dir="ltr" placeholder="username" autocomplete="username" autocapitalize="none" spellcheck="false">
 <p class="muted small">اسم المستخدم فريد ولا يمكن تغييره لاحقًا.</p>
-<button id="suBtn" class="btn primary-btn" type="button">
-<i data-lucide="check"></i>
-إنشاء الحساب
-</button>
+<button id="suBtn" class="btn primary-btn" type="button"><i data-lucide="check" aria-hidden="true"></i>إنشاء الحساب</button>
 <button id="suOut" class="btn ghost" type="button">تسجيل الخروج</button>
 </div>
 </main>
 
 <!-- MAIN APP -->
-<section id="app" class="app" hidden>
-<aside class="side">
+<section id="app" class="app" hidden aria-label="تطبيق CloverChat">
+<aside class="side" aria-label="قائمة المحادثات">
 <header class="sidebar-header">
 <div class="brand">
-<img src="https://acrft.github.io/images/achat.png" alt="CloverChat" width="42" height="42">
-<div>
-<b>Clover<span>Chat</span></b>
-<small>مساحتك للتواصل</small>
+<img src="https://acrft.github.io/images/achat.png" alt="شعار CloverChat" width="44" height="44">
+<div><b>Clover<span>Chat</span></b><small>مساحتك للتواصل</small></div>
 </div>
-</div>
-<button id="profBtn" class="icon-btn" type="button" title="الإعدادات" aria-label="الإعدادات">
-<i data-lucide="settings-2"></i>
-</button>
+<button id="profBtn" class="icon-btn" type="button" title="الإعدادات" aria-label="الإعدادات"><i data-lucide="settings-2" aria-hidden="true"></i></button>
 </header>
-
 <div class="sidebar-label">المحادثات</div>
 <div class="search-wrap">
 <i data-lucide="search" aria-hidden="true"></i>
-<input id="findIn" dir="ltr" placeholder="ابحث عن مستخدم..." aria-label="البحث عن مستخدم">
-<kbd>↵</kbd>
+<input id="findIn" dir="ltr" placeholder="ابحث عن مستخدم..." aria-label="البحث عن مستخدم" autocomplete="off" autocapitalize="none" spellcheck="false">
+<kbd aria-hidden="true">↵</kbd>
 </div>
-<div id="chatList" class="list"></div>
-<footer class="sidebar-bottom">
-<div class="online-indicator"></div>
-<span>متصل بحسابك</span>
-<span class="version">CLOVERCHAT</span>
-</footer>
+<div id="chatList" class="list" role="list" aria-label="المحادثات"></div>
+<footer class="sidebar-bottom"><div class="online-indicator" aria-hidden="true"></div><span>متصل بحسابك</span><span class="version">CLOVERCHAT</span></footer>
 </aside>
 
 <!-- CHAT AREA -->
-<main class="pane">
+<main class="pane" id="chatPane" aria-label="منطقة الدردشة">
 <div id="empty" class="empty-state">
-<div class="empty-art">
-<div class="empty-orbit orbit-one"></div>
-<div class="empty-orbit orbit-two"></div>
-<div class="empty-icon">
-<i data-lucide="messages-square"></i>
-</div>
-<div class="floating-icon float-one">
-<i data-lucide="message-circle"></i>
-</div>
-<div class="floating-icon float-two">
-<i data-lucide="sparkles"></i>
-</div>
+<div class="empty-art" aria-hidden="true">
+<div class="empty-orbit orbit-one"></div><div class="empty-orbit orbit-two"></div>
+<div class="empty-icon"><i data-lucide="messages-square"></i></div>
+<div class="floating-icon float-one"><i data-lucide="message-circle"></i></div>
+<div class="floating-icon float-two"><i data-lucide="sparkles"></i></div>
 </div>
 <h2>كل محادثاتك في مكان واحد</h2>
 <p class="muted">اختر محادثة من القائمة أو ابحث عن شخص لبدء محادثة جديدة.</p>
-<div class="empty-hint">
-<i data-lucide="lock"></i>
-تواصل بسهولة مع أصدقائك
-</div>
+<div class="empty-hint"><i data-lucide="lock" aria-hidden="true"></i>تواصل بسهولة مع أصدقائك</div>
 </div>
 
 <div id="room" hidden>
 <header class="chat-header">
-<button id="backBtn" class="icon-btn back" type="button" aria-label="رجوع">
-<i data-lucide="arrow-right"></i>
-</button>
-<img id="peerAv" class="av peer-avatar" alt="" width="44" height="44">
-<div class="peer-info">
-<b id="peerName"></b>
-<div id="peerUser" class="muted small" dir="ltr"></div>
-</div>
-<div class="header-actions">
-<span class="secure-label">
-<i data-lucide="shield-check"></i>
-محادثة
-</span>
-</div>
+<button id="backBtn" class="icon-btn back" type="button" aria-label="العودة إلى قائمة المحادثات"><i data-lucide="arrow-right" aria-hidden="true"></i></button>
+<img id="peerAv" class="av peer-avatar" alt="" width="45" height="45">
+<div class="peer-info"><b id="peerName"></b><div id="peerUser" class="muted small" dir="ltr"></div></div>
+<div class="header-actions"><span class="secure-label"><i data-lucide="shield-check" aria-hidden="true"></i>محادثة</span></div>
 </header>
-<div id="msgs" class="msgs" aria-live="polite"></div>
+<div id="msgs" class="msgs" role="log" aria-live="polite" aria-relevant="additions text" aria-label="الرسائل"></div>
 <form id="form" class="message-composer" autocomplete="off">
-<button id="imgBtn" type="button" class="icon-btn attach-btn" title="إرفاق صورة" aria-label="إرفاق صورة">
-<i data-lucide="image-plus"></i>
-</button>
-<input id="imgIn" type="file" accept="image/*" hidden>
-<input id="msgIn" maxlength="500" placeholder="اكتب رسالتك هنا..." aria-label="اكتب رسالتك">
-<button class="send-btn" type="submit" title="إرسال" aria-label="إرسال">
-<i data-lucide="send"></i>
-</button>
+<button id="imgBtn" type="button" class="icon-btn attach-btn" title="إرفاق صورة" aria-label="إرفاق صورة"><i data-lucide="image-plus" aria-hidden="true"></i></button>
+<input id="imgIn" type="file" accept="image/*" hidden aria-label="اختيار صورة">
+<label class="sr-only" for="msgIn">اكتب رسالتك</label>
+<input id="msgIn" maxlength="500" placeholder="اكتب رسالتك هنا..." aria-label="اكتب رسالتك" autocomplete="off">
+<button class="send-btn" type="submit" title="إرسال" aria-label="إرسال"><i data-lucide="send" aria-hidden="true"></i></button>
 </form>
 </div>
 </main>
@@ -213,38 +159,29 @@
 <div id="modal" class="center modal" hidden>
 <div class="card profile-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
 <div class="modal-heading">
-<div>
-<span class="eyebrow">ACCOUNT SETTINGS</span>
-<h2 id="profileTitle">ملفك الشخصي</h2>
-</div>
-<button id="pClose" class="icon-btn" type="button" aria-label="إغلاق">
-<i data-lucide="x"></i>
-</button>
+<div><span class="eyebrow">ACCOUNT SETTINGS</span><h2 id="profileTitle">ملفك الشخصي</h2></div>
+<button id="pClose" class="icon-btn" type="button" aria-label="إغلاق"><i data-lucide="x" aria-hidden="true"></i></button>
 </div>
 <div class="profile-photo-wrap">
-<img id="pAv" class="logo round" alt="الصورة الشخصية">
-<button id="pPhoto" class="photo-edit" type="button" title="تغيير الصورة" aria-label="تغيير الصورة">
-<i data-lucide="camera"></i>
-</button>
+<img id="pAv" class="logo round" alt="الصورة الشخصية" width="104" height="104">
+<button id="pPhoto" class="photo-edit" type="button" title="تغيير الصورة" aria-label="تغيير الصورة"><i data-lucide="camera" aria-hidden="true"></i></button>
 </div>
-<input id="pPhotoIn" type="file" accept="image/*" hidden>
+<input id="pPhotoIn" type="file" accept="image/*" hidden aria-label="اختيار صورة الملف الشخصي">
 <label class="field-label" for="pName">الاسم</label>
 <input id="pName" maxlength="30" placeholder="اسمك" autocomplete="name">
 <label class="field-label" for="pUserIn">اسم المستخدم</label>
-<input id="pUserIn" dir="ltr" maxlength="20" placeholder="username" autocomplete="username">
+<input id="pUserIn" dir="ltr" maxlength="20" placeholder="username" autocomplete="username" autocapitalize="none" spellcheck="false">
 <label class="field-label" for="pBio">نبذة عنك</label>
 <textarea id="pBio" maxlength="120" rows="3" placeholder="اكتب نبذة قصيرة عنك..."></textarea>
 <div class="linked-title">الحسابات المرتبطة</div>
 <div id="linked"></div>
-<button id="pSave" class="btn primary-btn" type="button">
-<i data-lucide="save"></i>
-حفظ التغييرات
-</button>
-<button id="pOut" class="btn logout-btn" type="button">
-<i data-lucide="log-out"></i>
-تسجيل الخروج
-</button>
+<button id="pSave" class="btn primary-btn" type="button"><i data-lucide="save" aria-hidden="true"></i>حفظ التغييرات</button>
+<button id="pOut" class="btn logout-btn" type="button"><i data-lucide="log-out" aria-hidden="true"></i>تسجيل الخروج</button>
 </div>
 </div>
+
+<!-- Optional hidden compatibility target used by index.js when available -->
+<img id="meAv" alt="" hidden>
+<noscript><div class="noscript-message">لتشغيل CloverChat، فعّل JavaScript في المتصفح.</div></noscript>
 </body>
 </html>
