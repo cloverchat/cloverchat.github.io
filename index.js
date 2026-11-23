@@ -472,3 +472,11 @@ document.addEventListener("visibilitychange",()=>{
   boot().catch(e=>{console.error(e);toast("تعذر تحديث بيانات الحساب");});
  }
 });
+document.querySelector('.skip-link')?.addEventListener('click',e=>{
+  e.preventDefault();
+  const app=document.getElementById('app');
+  if(app&&!app.hidden){
+    app.scrollIntoView({behavior:'smooth'});
+    app.focus({preventScroll:true});
+  }
+});
