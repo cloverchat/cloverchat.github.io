@@ -2,26 +2,25 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<meta name="theme-color" content="#090e0c">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090b10">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="CloverChat منصة دردشة عربية للتواصل مع الأصدقاء ومشاركة الرسائل والصور في تجربة عصرية وسهلة الاستخدام.">
-<meta name="keywords" content="CloverChat,Clover Chat,دردشة,شات,دردشة عربية,تواصل,رسائل,محادثات">
+<meta name="description" content="CloverChat — منصة دردشة عربية عصرية للتواصل مع أصدقائك ومشاركة الرسائل والصور بسهولة.">
+<meta name="keywords" content="CloverChat, دردشة, شات عربي, محادثات, رسائل">
 <meta name="author" content="CloverChat">
-<meta name="robots" content="index,follow,max-image-preview:large">
+<meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ar_EG">
 <meta property="og:site_name" content="CloverChat">
-<meta property="og:title" content="CloverChat | دردشة بلا حدود">
+<meta property="og:title" content="CloverChat | تواصل بلا حدود">
 <meta property="og:description" content="مساحتك الخاصة للتواصل والدردشة مع أصدقائك.">
 <meta property="og:url" content="https://cloverchat.github.io/">
 <meta property="og:image" content="https://acrft.github.io/images/achat.png">
-<meta property="og:image:alt" content="شعار CloverChat">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="CloverChat | دردشة بلا حدود">
+<meta name="twitter:title" content="CloverChat">
 <meta name="twitter:description" content="تواصل مع أصدقائك في تجربة دردشة عربية عصرية.">
 <meta name="twitter:image" content="https://acrft.github.io/images/achat.png">
-<title>CloverChat | دردشة عربية وتواصل مع الأصدقاء</title>
+<title>CloverChat | دردشة عربية عصرية</title>
 <link rel="canonical" href="https://cloverchat.github.io/">
 <link rel="icon" href="https://acrft.github.io/images/achat.png">
 <link rel="apple-touch-icon" href="https://acrft.github.io/images/achat.png">
@@ -30,29 +29,6 @@
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./index.css">
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"WebSite",
-  "name":"CloverChat",
-  "alternateName":"Clover Chat",
-  "url":"https://cloverchat.github.io/",
-  "inLanguage":"ar",
-  "description":"منصة دردشة عربية للتواصل مع الأصدقاء."
-}
-</script>
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org",
-  "@type":"SoftwareApplication",
-  "name":"CloverChat",
-  "applicationCategory":"CommunicationApplication",
-  "operatingSystem":"Web",
-  "inLanguage":"ar",
-  "description":"منصة دردشة عربية للتواصل مع الأصدقاء ومشاركة الرسائل والصور."
-}
-</script>
-  
 <script defer src="https://unpkg.com/lucide@latest"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -60,8 +36,8 @@
 <script defer src="./index.js"></script>
 </head>
 <body>
-<div class="ambient ambient-one"></div>
-<div class="ambient ambient-two"></div>
+<div class="ambient ambient-one" aria-hidden="true"></div>
+<div class="ambient ambient-two" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <!-- LOGIN -->
@@ -71,18 +47,18 @@
 <img class="logo" src="https://acrft.github.io/images/achat.png" alt="CloverChat" width="76" height="76">
 </div>
 <div class="brand-name">Clover<span>Chat</span></div>
-<h1 class="seo-heading">دردشة عربية تجمعك بأصدقائك في CloverChat</h1>
+<h1 class="seo-heading">دردشة عربية تجمعك بأصدقائك</h1>
 <p class="muted auth-description">مساحتك الخاصة للتواصل والدردشة.</p>
 <div class="auth-divider"><span>ابدأ رحلتك</span></div>
 <button id="googleBtn" class="btn provider-btn" type="button">
 <span class="provider-icon google-icon">G</span>
 <span>المتابعة باستخدام Google</span>
-<i data-lucide="arrow-left"></i>
+<i data-lucide="arrow-left" aria-hidden="true"></i>
 </button>
 <button id="githubBtn" class="btn provider-btn github-btn" type="button">
 <span class="provider-icon github-icon"><i data-lucide="github"></i></span>
 <span>المتابعة باستخدام GitHub</span>
-<i data-lucide="arrow-left"></i>
+<i data-lucide="arrow-left" aria-hidden="true"></i>
 </button>
 <div class="or"><span>أو باستخدام رقم الهاتف</span></div>
 <label class="field-label" for="phoneIn">رقم الهاتف</label>
@@ -94,7 +70,7 @@
 </button>
 <div id="codeBox" class="code-box" hidden>
 <p class="muted small">أدخل كود التحقق المرسل إلى هاتفك عبر SMS.</p>
-<input id="codeIn" inputmode="numeric" maxlength="6" dir="ltr" placeholder="000000">
+<input id="codeIn" inputmode="numeric" maxlength="6" dir="ltr" placeholder="000000" autocomplete="one-time-code">
 <button id="codeBtn" class="btn primary-btn" type="button">تأكيد الكود</button>
 </div>
 <div class="auth-footer">
@@ -111,14 +87,14 @@
 <h2>ربط رقم الهاتف</h2>
 <p class="muted small">اربط رقم هاتفك بحسابك لتسهيل التواصل.</p>
 <label class="field-label" for="plPhone">رقم الهاتف</label>
-<input id="plPhone" type="tel" dir="ltr" placeholder="+20123456789">
+<input id="plPhone" type="tel" dir="ltr" placeholder="+20123456789" autocomplete="tel">
 <div id="link-recaptcha-container"></div>
 <button id="plBtn" class="btn primary-btn" type="button">
 <i data-lucide="send"></i>
 إرسال كود التحقق
 </button>
 <div id="plBox" hidden>
-<input id="plCode" inputmode="numeric" maxlength="6" dir="ltr" placeholder="كود التحقق">
+<input id="plCode" inputmode="numeric" maxlength="6" dir="ltr" placeholder="كود التحقق" autocomplete="one-time-code">
 <button id="plCodeBtn" class="btn primary-btn" type="button">تأكيد وربط الرقم</button>
 </div>
 <button id="plOut" class="btn ghost" type="button">
@@ -135,9 +111,9 @@
 <h2>أنشئ ملفك الشخصي</h2>
 <p class="muted small">خطوة بسيطة وتكون جاهز للدردشة.</p>
 <label class="field-label" for="suName">اسم العرض</label>
-<input id="suName" maxlength="30" placeholder="اكتب اسمك">
+<input id="suName" maxlength="30" placeholder="اكتب اسمك" autocomplete="name">
 <label class="field-label" for="suUser">اسم المستخدم</label>
-<input id="suUser" maxlength="20" dir="ltr" placeholder="username">
+<input id="suUser" maxlength="20" dir="ltr" placeholder="username" autocomplete="username">
 <p class="muted small">اسم المستخدم فريد ولا يمكن تغييره لاحقًا.</p>
 <button id="suBtn" class="btn primary-btn" type="button">
 <i data-lucide="check"></i>
@@ -152,7 +128,7 @@
 <aside class="side">
 <header class="sidebar-header">
 <div class="brand">
-<img src="https://acrft.github.io/images/achat.png" alt="CloverChat">
+<img src="https://acrft.github.io/images/achat.png" alt="CloverChat" width="42" height="42">
 <div>
 <b>Clover<span>Chat</span></b>
 <small>مساحتك للتواصل</small>
@@ -162,25 +138,19 @@
 <i data-lucide="settings-2"></i>
 </button>
 </header>
-<div class="sidebar-label group-heading">
-<span>المحادثات</span>
-<button id="createGroupBtn" class="create-group-btn" type="button" title="إنشاء مجموعة" onclick="document.getElementById('groupModal').hidden=false">
-<i data-lucide="plus"></i>
-<span>مجموعة</span>
-</button>
-</button>
-</div>
+
+<div class="sidebar-label">المحادثات</div>
 <div class="search-wrap">
-<i data-lucide="search"></i>
-<input id="findIn" dir="ltr" placeholder="ابحث عن مستخدم...">
+<i data-lucide="search" aria-hidden="true"></i>
+<input id="findIn" dir="ltr" placeholder="ابحث عن مستخدم..." aria-label="البحث عن مستخدم">
 <kbd>↵</kbd>
 </div>
 <div id="chatList" class="list"></div>
-<div class="sidebar-bottom">
+<footer class="sidebar-bottom">
 <div class="online-indicator"></div>
 <span>متصل بحسابك</span>
 <span class="version">CLOVERCHAT</span>
-</div>
+</footer>
 </aside>
 
 <!-- CHAT AREA -->
@@ -212,7 +182,7 @@
 <button id="backBtn" class="icon-btn back" type="button" aria-label="رجوع">
 <i data-lucide="arrow-right"></i>
 </button>
-<img id="peerAv" class="av peer-avatar" alt="">
+<img id="peerAv" class="av peer-avatar" alt="" width="44" height="44">
 <div class="peer-info">
 <b id="peerName"></b>
 <div id="peerUser" class="muted small" dir="ltr"></div>
@@ -224,7 +194,7 @@
 </span>
 </div>
 </header>
-<div id="msgs" class="msgs"></div>
+<div id="msgs" class="msgs" aria-live="polite"></div>
 <form id="form" class="message-composer" autocomplete="off">
 <button id="imgBtn" type="button" class="icon-btn attach-btn" title="إرفاق صورة" aria-label="إرفاق صورة">
 <i data-lucide="image-plus"></i>
@@ -239,24 +209,13 @@
 </main>
 </section>
 
-<div id="groupModal" class="center modal" hidden>
-<div class="card profile-card">
-<div class="modal-heading">
-<div><span class="eyebrow">CLOVERCHAT GROUPS</span><h2>إنشاء مجموعة</h2></div>
-<button id="groupClose" class="icon-btn" type="button"><i data-lucide="x"></i></button>
-</div>
-<label class="field-label" for="groupName">اسم المجموعة</label>
-<input id="groupName" maxlength="40" placeholder="اكتب اسم المجموعة">
-<button id="groupCreate" class="btn primary-btn" type="button">إنشاء المجموعة</button>
-</div>
-</div>
 <!-- PROFILE MODAL -->
 <div id="modal" class="center modal" hidden>
-<div class="card profile-card">
+<div class="card profile-card" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
 <div class="modal-heading">
 <div>
 <span class="eyebrow">ACCOUNT SETTINGS</span>
-<h2>ملفك الشخصي</h2>
+<h2 id="profileTitle">ملفك الشخصي</h2>
 </div>
 <button id="pClose" class="icon-btn" type="button" aria-label="إغلاق">
 <i data-lucide="x"></i>
@@ -264,15 +223,15 @@
 </div>
 <div class="profile-photo-wrap">
 <img id="pAv" class="logo round" alt="الصورة الشخصية">
-<button id="pPhoto" class="photo-edit" type="button" title="تغيير الصورة">
+<button id="pPhoto" class="photo-edit" type="button" title="تغيير الصورة" aria-label="تغيير الصورة">
 <i data-lucide="camera"></i>
 </button>
 </div>
 <input id="pPhotoIn" type="file" accept="image/*" hidden>
 <label class="field-label" for="pName">الاسم</label>
-<input id="pName" maxlength="30" placeholder="اسمك">
+<input id="pName" maxlength="30" placeholder="اسمك" autocomplete="name">
 <label class="field-label" for="pUserIn">اسم المستخدم</label>
-<input id="pUserIn" dir="ltr" maxlength="20" placeholder="username">
+<input id="pUserIn" dir="ltr" maxlength="20" placeholder="username" autocomplete="username">
 <label class="field-label" for="pBio">نبذة عنك</label>
 <textarea id="pBio" maxlength="120" rows="3" placeholder="اكتب نبذة قصيرة عنك..."></textarea>
 <div class="linked-title">الحسابات المرتبطة</div>
@@ -287,6 +246,5 @@
 </button>
 </div>
 </div>
-
 </body>
 </html>
