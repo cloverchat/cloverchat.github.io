@@ -422,3 +422,257 @@ border-radius:25px;
 .group-message-name:hover{text-decoration:underline}
 #groupAddBtn{color:#bdaaff;border-color:rgba(155,123,255,.2);background:rgba(155,123,255,.08)}
 #groupAddBtn:hover{background:rgba(155,123,255,.18)}
+
+/* CLOVERCHAT — ALAMCHAT STYLE */
+:root{
+--bg:#101d20;
+--surface:#17292e;
+--surface-2:#1b3035;
+--surface-3:#203b40;
+--green:#19cf79;
+--green-light:#45e99a;
+--green-dark:#087c68;
+--green-soft:rgba(25,207,121,.12);
+--text:#edf5f5;
+--muted:#a0b2b5;
+--border:rgba(190,225,220,.10);
+--border-hover:rgba(25,207,121,.35);
+--shadow:0 25px 75px rgba(0,0,0,.35);
+}
+body{
+background:
+radial-gradient(ellipse at 15% 15%,rgba(28,105,48,.42),transparent 45%),
+radial-gradient(ellipse at 85% 85%,rgba(17,80,93,.35),transparent 45%),
+#101d20;
+}
+.ambient-one{background:#20c96c;opacity:.19;filter:blur(145px)}
+.ambient-two{background:#087d78;opacity:.16;filter:blur(150px)}
+.auth-card{
+max-width:625px;
+padding:48px 42px 38px;
+border-radius:48px;
+background:rgba(20,37,43,.94);
+border:1px solid rgba(130,190,180,.12);
+box-shadow:0 30px 90px rgba(0,0,0,.3);
+backdrop-filter:blur(22px);
+}
+.auth-card:before{
+background:linear-gradient(90deg,transparent,#20d982,transparent);
+}
+.brand-mark{
+width:160px;
+height:160px;
+padding:0;
+border:0;
+border-radius:50%;
+background:transparent;
+box-shadow:0 12px 35px rgba(0,0,0,.3);
+}
+.logo{border-radius:50%}
+.brand-name{
+font-size:1.5rem;
+font-weight:600;
+letter-spacing:0;
+background:none;
+color:#dce9e9;
+}
+.brand-name span{
+background:none;
+color:inherit;
+}
+.seo-heading{
+font-size:2rem;
+font-weight:900;
+color:#f0f5f5;
+margin:20px 0;
+}
+.auth-description{
+font-size:1.1rem;
+line-height:2;
+color:#a8b9bc;
+}
+.auth-divider{display:none}
+.provider-btn{
+min-height:76px;
+border-radius:23px;
+font-size:1.05rem;
+background:#192b31;
+border:1px solid rgba(255,255,255,.09);
+}
+.provider-btn:hover{
+background:#20373d;
+border-color:rgba(25,207,121,.3);
+transform:translateY(-2px);
+}
+.github-btn{
+background:#19262d;
+}
+.github-btn:hover{background:#23343a}
+.provider-icon{
+width:37px;
+height:37px;
+border-radius:50%;
+}
+.primary-btn{
+background:linear-gradient(110deg,#24d987,#08ad67);
+color:white;
+box-shadow:0 8px 25px rgba(25,207,121,.2);
+}
+.primary-btn:hover{
+background:linear-gradient(110deg,#40e99a,#0cbd73);
+}
+input,textarea{
+background:#17292e;
+border:1px solid rgba(255,255,255,.07);
+border-radius:18px;
+}
+input:focus,textarea:focus{
+background:#1b3035;
+border-color:#19cf79;
+box-shadow:0 0 0 4px rgba(25,207,121,.09);
+}
+.field-label{color:#d8e6e6}
+.auth-footer{
+font-size:.9rem;
+color:#aabbbd;
+}
+.section-icon{
+background:rgba(25,207,121,.12);
+color:#45e99a;
+border-color:rgba(25,207,121,.2);
+}
+.auth-card h2{color:#f0f5f5}
+/* CHAT */
+.app{
+background:#101d20;
+}
+.side{
+background:#192b30;
+}
+.sidebar-header,.chat-header{
+background:rgba(25,43,48,.96);
+border-color:rgba(255,255,255,.07);
+}
+.brand b span{color:#39dc91}
+.icon-btn{
+background:#20373b;
+color:#c1d5d3;
+border-radius:50%;
+}
+.icon-btn:hover{
+background:rgba(25,207,121,.15);
+color:#45e99a;
+}
+.av{
+border-radius:50%;
+}
+.pane{
+background:
+radial-gradient(ellipse at 50% 40%,rgba(25,207,121,.08),transparent 70%),
+#15282c;
+}
+.msgs{
+background:transparent;
+padding:24px 18px;
+}
+.m{
+max-width:min(82%,540px);
+padding:13px 17px;
+border-radius:20px 20px 20px 6px;
+background:#20373d;
+border:0;
+font-size:1rem;
+line-height:1.9;
+box-shadow:0 5px 16px rgba(0,0,0,.12);
+}
+.m.me{
+background:linear-gradient(145deg,#087d68,#076c5b);
+border-radius:20px 20px 6px 20px;
+}
+.m i{color:#a8d9c8}
+.group-sender{color:#45e99a}
+.group-sender-avatar{
+border-radius:50%;
+border-color:rgba(25,207,121,.3);
+}
+.message-composer{
+background:#192b30;
+border-top:1px solid rgba(255,255,255,.06);
+gap:10px;
+padding:14px 16px;
+}
+.message-composer input{
+background:#24383e;
+border:0;
+border-radius:35px;
+padding:17px 22px;
+font-size:1rem;
+}
+.attach-btn,.send-btn{
+width:51px;
+height:51px;
+border-radius:50%;
+}
+.attach-btn{
+background:linear-gradient(145deg,#24d987,#0bb66e);
+color:white;
+border:0;
+}
+.send-btn{
+background:linear-gradient(145deg,#24d987,#0bb66e);
+color:white;
+box-shadow:0 5px 18px rgba(25,207,121,.2);
+}
+.send-btn:hover{background:#43e99b}
+.empty-icon{
+background:linear-gradient(145deg,#087d68,#075747);
+border-radius:50%;
+}
+.empty-icon svg,.empty-hint svg{color:#45e99a}
+.empty-orbit{border-color:rgba(25,207,121,.18)}
+.empty-hint{
+background:#20373d;
+border-color:rgba(255,255,255,.06);
+border-radius:30px;
+}
+.profile-card{
+background:#192b30;
+border-color:rgba(255,255,255,.08);
+}
+#toast{
+background:#20373d;
+border-color:rgba(25,207,121,.3);
+}
+@media(max-width:760px){
+.app{background:#15282c}
+.chat-header{
+height:72px;
+padding:0 12px;
+}
+.msgs{padding:15px 10px}
+.m{max-width:88%;font-size:.95rem}
+.message-composer{
+gap:8px;
+padding:10px;
+padding-bottom:max(10px,env(safe-area-inset-bottom));
+}
+.message-composer input{
+padding:14px 17px;
+}
+.attach-btn,.send-btn{
+width:45px;
+height:45px;
+}
+.auth-card{
+padding:35px 23px;
+border-radius:38px;
+}
+.brand-mark{width:125px;height:125px}
+.seo-heading{font-size:1.65rem}
+.provider-btn{min-height:66px}
+}
+@media(max-width:380px){
+.auth-card{padding:28px 17px}
+.brand-mark{width:105px;height:105px}
+.seo-heading{font-size:1.45rem}
+}
