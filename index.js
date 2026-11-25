@@ -1,4 +1,3 @@
-
 "use strict";
 /* CloverChat — Firebase Compat 8.10.1 */
 firebase.initializeApp({
@@ -6,7 +5,7 @@ firebase.initializeApp({
   authDomain:"alamchat1.firebaseapp.com",
   databaseURL:"https://alamchat1-default-rtdb.firebaseio.com"
 });
-let phone="",phoneConfirmation=null,linkPhoneVerificationId=null,phoneRecaptcha=null,linkPhoneRecaptcha=null;
+let phone="",telegramRequestId="",phoneLinkRequestId="";
 const auth=firebase.auth(),db=firebase.database(),$=id=>document.getElementById(id);
 const WORKER="https://still-frost-fc39.eldinalam91.workers.dev";
 const NOAV="https://i.imgur.com/HeIi0wU.png";
@@ -96,64 +95,35 @@ const fmt=t=>t?new Date(t).toLocaleTimeString("ar-EG",{
  minute:"2-digit"
 }):"";
 
-async function social(provider){
+async function startTelegramLogin(){
+ const b=$("telegramBtn");b.disabled=true;
+ const tgWindow=window.open("about:blank","_blank");
  try{
-  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  await auth.signInWithPopup(provider);
- }catch(e){
-  if(e.code==="auth/account-exists-with-different-credential"){
-   toast("البريد مرتبط بطريقة دخول أخرى. سجّل بالطريقة الأصلية أولًا، ثم اربط الطريقة الجديدة من إعدادات الحساب. لم يتم دمج أي حساب تلقائيًا.");
-   return;
-  }
-  if(!/popup-closed|cancelled/.test(e.code||""))
-   toast(e.message||"فشل الدخول");
- }
-}
-$("googleBtn").onclick=()=>social(new firebase.auth.GoogleAuthProvider());
-$("githubBtn").onclick=()=>social(new firebase.auth.GithubAuthProvider());
-
-function normalizePhone(value){
- const p=String(value||"").replace(/[\s()-]/g,"");
- if(!/^\+[1-9]\d{7,14}$/.test(p))throw new Error("اكتب الرقم بالصيغة الدولية، مثال: +201xxxxxxxxx");
- return p;
-}
-function getRecaptcha(container,kind){
- const key=kind==="link"?"linkPhoneRecaptcha":"phoneRecaptcha";
- if(!window[key]){
-  window[key]=new firebase.auth.RecaptchaVerifier(container,{
-   size:"invisible",
-   callback:()=>{},
-   "expired-callback":()=>{
-    window[key]=null;
-   }
-  },firebase.app());
- }
- return window[key];
-}
-$("phoneBtn").onclick=async()=>{
- const b=$("phoneBtn");b.disabled=true;
- try{
-  phone=normalizePhone($("phoneIn").value);
-  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  phoneConfirmation=await auth.signInWithPhoneNumber(phone,getRecaptcha("recaptcha-container","login"));
+  const d=await api("/otp/start",{});
+  if(!d.link||!d.requestId)throw new Error("الخادم لم ينشئ طلب تسجيل الدخول");
+  telegramRequestId=d.requestId;
+  if(tgWindow)tgWindow.location=d.link;else toast("اسمح بفتح النوافذ المنبثقة لفتح Telegram");
   $("codeBox").hidden=false;
-  toast("تم إرسال كود SMS إلى هاتفك");
- }catch(e){
-  toast(e.message||"تعذر إرسال كود SMS");
- }finally{b.disabled=false;}
-};
+  toast("افتح بوت CloverChat في Telegram واضغط Start لاستلام الكود");
+ }catch(e){toast(e.message||"تعذر بدء تسجيل الدخول عبر Telegram");}
+ finally{b.disabled=false;}
+}
+$("telegramBtn").onclick=startTelegramLogin;
 $("codeBtn").onclick=async()=>{
  const b=$("codeBtn");b.disabled=true;
  try{
   const code=$("codeIn").value.trim();
-  if(!/^\d{6}$/.test(code))throw new Error("اكتب كود التحقق المكون من 6 أرقام");
-  if(!phoneConfirmation)throw new Error("اطلب كود تحقق جديد أولًا");
-  await phoneConfirmation.confirm(code);
-  phoneConfirmation=null;
-  toast("تم تسجيل الدخول بنجاح");
+  if(!telegramRequestId)throw new Error("ابدأ تسجيل الدخول عبر Telegram أولًا");
+  if(!/^\d{6}$/.test(code))throw new Error("اكتب الكود المكوّن من 6 أرقام");
+  const d=await api("/otp/verify",{requestId:telegramRequestId,code});
+  if(!d.token)throw new Error("الخادم لم يرجع رمز تسجيل الدخول");
+  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  await auth.signInWithCustomToken(d.token);
+  telegramRequestId="";
  }catch(e){toast(e.message||"فشل التحقق");}
  finally{b.disabled=false;}
 };
+
 $("suOut").onclick=$("pOut").onclick=()=>auth.signOut();
 $("suBtn").onclick=async()=>{
  const u=$("suUser").value.trim().toLowerCase().replace(/^@/,"");
@@ -175,18 +145,9 @@ auth.onAuthStateChanged(user=>{
 });
 async function boot(){
  const uid=me?.uid;if(!uid)return;
- const [phoneSnap,s]=await Promise.all([
-  db.ref("userPhone/"+uid).once("value"),
-  db.ref("users/"+uid).once("value")
- ]);
+ const s=await db.ref("users/"+uid).once("value");
  if(me?.uid!==uid)return;
- myPhone=phoneSnap.val()||"";
- if(me.phoneNumber){
-  try{
-   await api("/phone/link",{idToken:await me.getIdToken(true)});
-   myPhone=me.phoneNumber;
-  }catch(e){console.warn("Phone index sync failed:",e);}
- }
+ try{const p=await api("/phone/me",{idToken:await me.getIdToken()});myPhone=p.phone||"";}catch(e){myPhone="";console.warn("Phone lookup failed",e);}
  if(!s.exists()){
   prof=null;
   $("suName").value=me.displayName||"";
@@ -238,15 +199,14 @@ $("findIn").addEventListener("keydown",async e=>{
  const q=e.target.value.trim().toLowerCase().replace(/^@/,"");if(!q)return;
  try{
   let uid;
-  if(/^[+\d\s()-]+$/.test(q)&&/\d{8,15}/.test(q)){
-   const phoneValue=normalizePhone(q);
-   const result=await api("/phone/find",{idToken:await me.getIdToken(),phone:phoneValue});
-   uid=result.uid;
+  if(/^\+?\d[\d\s()-]{6,18}$/.test(q)){
+   const phone=q.replace(/[\s()-]/g,"");
+   const d=await api("/phone/find",{idToken:await me.getIdToken(),phone});uid=d.uid;
   }else{
    const s=await db.ref("usernames/"+q).once("value");
-   if(!s.exists())return toast("مفيش مستخدم بالاسم ده");
-   uid=s.val();
+   if(!s.exists())return toast("مفيش مستخدم بالاسم ده");uid=s.val();
   }
+  if(!uid)return toast("مفيش مستخدم بالبيانات دي");
   if(uid===me.uid)return toast("ده حسابك 😄");
   e.target.value="";openChat(uid);
  }catch(err){toast(err.message||"تعذر البحث عن المستخدم");}
@@ -321,73 +281,19 @@ $("imgIn").onchange=async e=>{
  catch(er){toast(er.message||"تعذر إرسال الصورة");}
  finally{b.disabled=false;}
 };
-function getLoginMethods(user){
- const ids=new Set((user.providerData||[]).map(p=>p.providerId).filter(Boolean));
- if(user.phoneNumber)ids.add("phone");
- if(/^tg\d+$/.test(String(user.uid||"")))ids.add("telegram");
- return ids;
-}
 async function renderLinked(){
  const box=$("linked"),current=auth.currentUser;
  if(!box||!current)return;
  box.replaceChildren();
- await current.reload();
- const ids=(current.providerData||[]).map(x=>x.providerId);
- const methods=[["google.com","Google",()=>new firebase.auth.GoogleAuthProvider()],["github.com","GitHub",()=>new firebase.auth.GithubAuthProvider()]];
- const phoneLinked=!!current.phoneNumber;
- function addButton(label,action,disabled=false){
-  const b=document.createElement("button");
-  b.type="button";
-  b.className="btn ghost";
-  b.textContent=label;
-  b.disabled=disabled;
-  b.onclick=action;
-  box.append(b);
- }
- for(const [id,name,makeProvider] of methods){
-  const linked=ids.includes(id);
-  addButton(linked?"✅ "+name+" مربوط — إلغاء الربط":"ربط حساب "+name,async()=>{
-   const b=[...box.querySelectorAll("button")].find(x=>x.textContent.includes(name));
-   if(b)b.disabled=true;
-   try{
-    const user=auth.currentUser;
-    if(linked){
-     await user.reload();
-     if(getLoginMethods(user).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
-     await user.unlink(id);
-     toast("تم إلغاء ربط "+name);
-    }else{
-     await user.linkWithPopup(makeProvider());
-     toast("تم ربط "+name+" بالحساب الحالي");
-    }
-    await auth.currentUser.reload();
-    renderLinked();
-   }catch(e){
-    const messages={
-     "auth/credential-already-in-use":"وسيلة الدخول دي مرتبطة بحساب آخر",
-     "auth/provider-already-linked":"وسيلة الدخول مرتبطة بالفعل",
-     "auth/requires-recent-login":"سجّل الدخول مرة أخرى ثم حاول إلغاء الربط",
-     "auth/popup-closed-by-user":"تم إغلاق نافذة تسجيل الدخول"
-    };
-    toast(messages[e.code]||e.message||"تعذر تنفيذ العملية");
-    if(b)b.disabled=false;
-   }
-  });
- }
- addButton(phoneLinked?"✅ الهاتف "+current.phoneNumber+" — إلغاء الربط":"ربط رقم هاتف",async()=>{
-  if(phoneLinked){
-   try{
-    await current.reload();
-    if(getLoginMethods(current).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
-    await current.unlink("phone");
-    myPhone="";
-    toast("تم إلغاء ربط الهاتف");
-    renderLinked();
-   }catch(e){toast(e.message||"تعذر إلغاء ربط الهاتف");}
-  }else{
-   $("modal").hidden=true;
-   show("plink");
+ const addButton=(label,action)=>{const b=document.createElement("button");b.type="button";b.className="btn ghost";b.textContent=label;b.onclick=action;box.append(b);};
+ addButton(myPhone?"✅ الهاتف المرتبط: "+myPhone:"ربط رقم هاتف عبر Telegram",async()=>{
+  if(myPhone){
+   if(!confirm("هل تريد إلغاء ربط رقم الهاتف؟"))return;
+   try{await api("/phone/unlink",{idToken:await current.getIdToken()});myPhone="";toast("تم إلغاء ربط رقم الهاتف");renderLinked();}
+   catch(e){toast(e.message||"تعذر إلغاء ربط الرقم");}
+   return;
   }
+  $("modal").hidden=true;show("plink");
  });
  icons();
 }
@@ -428,47 +334,28 @@ $("pSave").onclick=async()=>{
 };
 $("plBtn").onclick=async()=>{
  const b=$("plBtn");b.disabled=true;
+ const tgWindow=window.open("about:blank","_blank");
  try{
-  lp=normalizePhone($("plPhone").value);
-  const verifier=getRecaptcha("link-recaptcha-container","link");
-  linkPhoneVerificationId=await new firebase.auth.PhoneAuthProvider(auth).verifyPhoneNumber(lp,verifier);
+  const d=await api("/phone/link/start",{idToken:await auth.currentUser.getIdToken()});
+  if(!d.link||!d.requestId)throw new Error("تعذر إنشاء طلب ربط الهاتف");
+  phoneLinkRequestId=d.requestId;
   $("plBox").hidden=false;
-  toast("تم إرسال كود SMS للرقم الجديد");
- }catch(e){toast(e.message||"تعذر إرسال كود SMS");}
+  if(tgWindow)tgWindow.location=d.link;else toast("اسمح بفتح النوافذ المنبثقة لفتح Telegram");
+  toast("افتح البوت واضغط Start ثم شارك رقم هاتفك من زر مشاركة جهة الاتصال");
+  const started=Date.now();
+  while(Date.now()-started<120000){
+   await new Promise(r=>setTimeout(r,2500));
+   const status=await api("/phone/link/status",{idToken:await auth.currentUser.getIdToken(),requestId:phoneLinkRequestId});
+   if(status.status==="linked"){
+    myPhone=status.phone||"";phoneLinkRequestId="";$("plBox").hidden=true;
+    toast("تم التحقق من ملكية الرقم وربطه بحسابك بنجاح");show("app");renderLinked();$("modal").hidden=false;return;
+   }
+  }
+  throw new Error("انتهت مهلة انتظار مشاركة جهة الاتصال. ابدأ المحاولة مرة أخرى.");
+ }catch(e){toast(e.message||"تعذر ربط الهاتف");}
  finally{b.disabled=false;}
 };
-$("plCodeBtn").onclick=async()=>{
- const b=$("plCodeBtn");b.disabled=true;
- try{
-  const code=$("plCode").value.trim();
-  if(!/^\d{6}$/.test(code))throw new Error("اكتب كود التحقق المكون من 6 أرقام");
-  if(!linkPhoneVerificationId)throw new Error("اطلب كود تحقق جديد أولًا");
-  const credential=firebase.auth.PhoneAuthProvider.credential(linkPhoneVerificationId,code);
-  const current=auth.currentUser;
-  if(!current)throw new Error("سجّل الدخول أولًا");
-  if(current.phoneNumber){
-   await current.updatePhoneNumber(credential);
-  }else{
-   await current.linkWithCredential(credential);
-  }
-  await current.reload();
-  myPhone=current.phoneNumber||lp;
-  let phoneIndexed=false;
-  try{
-   await api("/phone/link",{idToken:await current.getIdToken(true)});
-   phoneIndexed=true;
-  }catch(indexError){
-   console.error("Phone index sync failed:",indexError);
-  }
-  linkPhoneVerificationId=null;
-  $("plBox").hidden=true;
-  $("plCode").value="";
-  toast(phoneIndexed?"تم ربط الهاتف وتفعيله للبحث بنجاح":"تم ربط الهاتف، لكن تعذر تفعيله للبحث الآن. أعد تحميل الصفحة للمحاولة مجددًا.");
-  show("app");renderLinked();$("modal").hidden=false;
- }catch(e){
-  toast(e.code==="auth/credential-already-in-use"||e.code==="auth/phone-number-already-exists"?"الرقم مرتبط بحساب آخر بالفعل":e.message||"فشل ربط الرقم");
- }finally{b.disabled=false;}
-};
+$("plCodeBtn").onclick=()=>toast("شارك جهة الاتصال من داخل محادثة البوت في Telegram؛ لا يوجد كود SMS.");
 $("plOut").onclick=()=>show("app");
 document.addEventListener("keydown",e=>{
  if(e.key==="Escape"){
@@ -492,12 +379,4 @@ document.addEventListener("visibilitychange",()=>{
   bootUid=me.uid;
   boot().catch(e=>{console.error(e);toast("تعذر تحديث بيانات الحساب");});
  }
-});
-document.querySelector('.skip-link')?.addEventListener('click',e=>{
-  e.preventDefault();
-  const app=document.getElementById('app');
-  if(app&&!app.hidden){
-    app.scrollIntoView({behavior:'smooth'});
-    app.focus({preventScroll:true});
-  }
 });
