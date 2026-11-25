@@ -90,6 +90,23 @@ async function getUser(uid){
  }
  return cache[uid];
 }
+let userViewModal=null;
+async function showUserProfile(uid){
+ if(!uid||uid==="__global")return;
+ try{
+  const u=await getUser(uid);
+  if(!userViewModal){
+   userViewModal=document.createElement("div");userViewModal.className="user-view-overlay";userViewModal.id="userViewModal";
+   userViewModal.innerHTML='<section class="user-view-card" role="dialog" aria-modal="true" aria-labelledby="userViewName"><button class="user-view-close" type="button" aria-label="إغلاق">×</button><img class="user-view-photo" alt="الصورة الشخصية"><h2 id="userViewName"></h2><div class="user-view-username"></div><p class="user-view-bio"></p><button class="user-view-chat" type="button">إرسال رسالة</button></section>';
+   document.body.append(userViewModal);userViewModal.addEventListener("click",e=>{if(e.target===userViewModal||e.target.closest(".user-view-close"))userViewModal.hidden=true;});
+  }
+  const photo=userViewModal.querySelector(".user-view-photo");photo.src=u.photo||NOAV;photo.onerror=e=>{e.currentTarget.src=NOAV;};
+  userViewModal.querySelector("#userViewName").textContent=u.name||"مستخدم";
+  userViewModal.querySelector(".user-view-username").textContent=u.username?"@"+u.username:"";
+  userViewModal.querySelector(".user-view-bio").textContent=u.bio||"لا توجد نبذة شخصية";
+  userViewModal.querySelector(".user-view-chat").onclick=()=>{userViewModal.hidden=true;openChat(uid);};userViewModal.hidden=false;
+ }catch(e){console.error(e);toast("تعذر تحميل الملف الشخصي");}
+}
 const fmt=t=>t?new Date(t).toLocaleTimeString("ar-EG",{
  hour:"2-digit",
  minute:"2-digit"
@@ -238,7 +255,9 @@ async function openChat(uid){
   $("empty").hidden=true;$("room").hidden=false;$("app").classList.add("open");
   $("peerName").textContent=peer.name||"مستخدم";
   $("peerUser").textContent=G?"مجموعة عامة":(peer.username?"@"+peer.username:"");
-  $("peerAv").src=peer.photo||NOAV;$("peerAv").onerror=()=>$("peerAv").src=NOAV;
+  $("peerAv").src=peer.photo||NOAV;$("peerAv").onerror=()=>{$("peerAv").src=NOAV;};
+  $("peerAv").style.cursor=G?"default":"pointer";$("peerName").style.cursor=G?"default":"pointer";
+  $("peerAv").onclick=()=>{if(!G)showUserProfile(peer.uid);};$("peerName").onclick=()=>{if(!G)showUserProfile(peer.uid);};
   if(msgRef)msgRef.off();
   const box=$("msgs");box.replaceChildren();
   msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).limitToLast(100);
@@ -256,6 +275,7 @@ async function openChat(uid){
    const line=document.createElement("div");line.className="message-line"+(mine?" mine":"");
    const av=document.createElement("img");av.className="message-avatar";av.src=m.photo||sender.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
    av.onerror=()=>{av.onerror=null;av.src=NOAV;};
+   av.title="عرض الملف الشخصي";av.style.cursor="pointer";av.onclick=()=>showUserProfile(m.uid);
    const d=document.createElement("div");d.className="m "+(mine?"me":"");
    if(G&&!mine){const n=document.createElement("b");n.textContent=m.name||sender.name||"بدون اسم";n.style.cssText="display:block;color:var(--green-light);font-size:.8rem";d.append(n);}
    if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
