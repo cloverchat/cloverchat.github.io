@@ -242,17 +242,29 @@ async function openChat(uid){
   if(msgRef)msgRef.off();
   const box=$("msgs");box.replaceChildren();
   msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).limitToLast(100);
-  msgRef.on("child_added",s=>{
+  msgRef.on("child_added",async s=>{
    if(openId!==chatOpenToken)return;
    const m=s.val();if(!m||!m.uid)return;
-   const d=document.createElement("div");d.className="m "+(m.uid===me.uid?"me":"");
-   if(G&&m.uid!==me.uid){const n=document.createElement("b");n.textContent=m.name||"بدون اسم";n.style.cssText="display:block;color:var(--green-light);font-size:.8rem";d.append(n);}
+   const mine=m.uid===me.uid;
+   let sender={name:m.name||"مستخدم",photo:m.photo||""};
+   if(mine)sender={...sender,...(prof||{})};
+   else if(!m.photo||!m.name){
+    try{sender={...sender,...await getUser(m.uid)};}
+    catch(err){console.warn("تعذر تحميل ملف مرسل الرسالة",err);}
+   }
+   if(openId!==chatOpenToken)return;
+   const line=document.createElement("div");line.className="message-line"+(mine?" mine":"");
+   const av=document.createElement("img");av.className="message-avatar";av.src=m.photo||sender.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
+   av.onerror=()=>{av.onerror=null;av.src=NOAV;};
+   const d=document.createElement("div");d.className="m "+(mine?"me":"");
+   if(G&&!mine){const n=document.createElement("b");n.textContent=m.name||sender.name||"بدون اسم";n.style.cssText="display:block;color:var(--green-light);font-size:.8rem";d.append(n);}
    if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
     const im=document.createElement("img");im.src=m.image;im.loading="lazy";im.alt="صورة مرسلة";
     im.onerror=()=>im.remove();im.onload=()=>{if(openId===chatOpenToken)box.scrollTop=box.scrollHeight;};d.append(im);
    }
    if(m.text)d.append(document.createTextNode(String(m.text).slice(0,500)));
-   const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);box.append(d);box.scrollTop=box.scrollHeight;
+   const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);
+   line.append(av,d);box.append(line);box.scrollTop=box.scrollHeight;
   },e=>{if(openId!==chatOpenToken)return;console.error(e);toast("تعذر تحميل الرسائل");});
  }catch(e){if(openId===chatOpenToken){console.error(e);toast("تعذر فتح المحادثة");}}
 }
@@ -262,7 +274,7 @@ async function push(m){
  const targetPeer=peer,targetChat=cur,sender=me,senderProfile=prof;
  if(targetPeer.global)return db.ref("chat").push({uid:sender.uid,name:senderProfile.name||"مستخدم",photo:senderProfile.photo||"",...m,time:TS});
  const up={},last=m.text||"📷 صورة",id=db.ref().push().key;
- up["chats/"+targetChat+"/messages/"+id]={uid:sender.uid,...m,time:TS};
+ up["chats/"+targetChat+"/messages/"+id]={uid:sender.uid,name:senderProfile.name||"مستخدم",photo:senderProfile.photo||"",...m,time:TS};
  up["userChats/"+sender.uid+"/"+targetChat]={with:targetPeer.uid,last,time:TS};
  up["userChats/"+targetPeer.uid+"/"+targetChat]={with:sender.uid,last,time:TS};
  await db.ref().update(up);
