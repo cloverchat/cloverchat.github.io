@@ -382,7 +382,8 @@ $("form").onsubmit=async e=>{
    aiHistory.pop();
    $("msgs").lastElementChild?.remove();
   }
-  toast("تعذر الإرسال");
+  console.error("Clover AI error:",er);
+ toast(er.message||"تعذر الإرسال");
   input.value=text+(input.value?"\n"+input.value:"");
  }finally{
   sending=false;
