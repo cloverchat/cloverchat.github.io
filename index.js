@@ -157,7 +157,7 @@ $("codeBtn").onclick=async()=>{
  finally{b.disabled=false;}
 };
 
-$("suOut").onclick=$("pOut").onclick=()=>auth.signOut();
+$("suOut").onclick=$("pOut").onclick=async()=>{const b=$("pOut");if(b)b.disabled=true;try{await auth.signOut();$("modal").hidden=true;show("login");}catch(e){toast(e.message||"تعذر تسجيل الخروج");}finally{if(b)b.disabled=false;}};
 $("suBtn").onclick=async()=>{
  const u=$("suUser").value.trim().toLowerCase().replace(/^@/,"");
  if(!/^[a-z0-9_]{3,20}$/.test(u))return toast("اليوزر 3-20 حرف: إنجليزي وأرقام و _");
