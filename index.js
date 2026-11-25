@@ -95,6 +95,22 @@ const fmt=t=>t?new Date(t).toLocaleTimeString("ar-EG",{
  minute:"2-digit"
 }):"";
 
+async function social(provider){
+ try{
+  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  await auth.signInWithPopup(provider);
+ }catch(e){
+  if(e.code==="auth/account-exists-with-different-credential"){
+   toast("هذا البريد مرتبط بطريقة دخول أخرى. ادخل بالطريقة الأصلية؛ لن ندمج الحسابات تلقائيًا.");
+   return;
+  }
+  if(e.code==="auth/popup-blocked")toast("اسمح بالنوافذ المنبثقة لتسجيل الدخول");
+  else if(e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request")toast(e.message||"فشل تسجيل الدخول");
+ }
+}
+$("googleBtn").onclick=()=>social(new firebase.auth.GoogleAuthProvider());
+$("githubBtn").onclick=()=>social(new firebase.auth.GithubAuthProvider());
+
 async function startTelegramLogin(){
  const b=$("telegramBtn");b.disabled=true;
  const tgWindow=window.open("about:blank","_blank");
