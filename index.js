@@ -301,11 +301,48 @@ async function renderLinked(){
  const box=$("linked"),current=auth.currentUser;
  if(!box||!current)return;
  box.replaceChildren();
- const addButton=(label,action)=>{const b=document.createElement("button");b.type="button";b.className="btn ghost";b.textContent=label;b.onclick=action;box.append(b);};
- addButton(myPhone?"✅ الهاتف المرتبط: "+myPhone:"ربط رقم هاتف عبر Telegram",async()=>{
+ const addButton=(parent,label,action)=>{
+  const b=document.createElement("button");b.type="button";b.className="btn ghost";b.textContent=label;b.onclick=action;parent.append(b);return b;
+ };
+ const addTitle=label=>{const h=document.createElement("div");h.className="linked-title";h.textContent=label;box.append(h);};
+ const providers=[
+  {id:"google.com",name:"Google",make:()=>new firebase.auth.GoogleAuthProvider()},
+  {id:"github.com",name:"GitHub",make:()=>new firebase.auth.GithubAuthProvider()}
+ ];
+ addTitle("حسابات تسجيل الدخول");
+ for(const item of providers){
+  const linked=(current.providerData||[]).some(p=>p.providerId===item.id);
+  addButton(box,linked?"✅ "+item.name+" — مرتبط":"ربط "+item.name,async e=>{
+   const button=e.currentTarget;button.disabled=true;
+   try{
+    if(linked){
+     const fresh=auth.currentUser;
+     const count=(fresh.providerData||[]).length;
+     if(count<=1)throw new Error("لا يمكن فصل آخر وسيلة دخول لحسابك. اربط وسيلة أخرى أولًا.");
+     if(!confirm("هل تريد إلغاء ربط حساب "+item.name+"؟"))return;
+     await fresh.unlink(item.id);
+     await fresh.reload();
+     toast("تم إلغاء ربط "+item.name);
+    }else{
+     await auth.currentUser.linkWithPopup(item.make());
+     await auth.currentUser.reload();
+     toast("تم ربط "+item.name+" بحسابك الحالي");
+    }
+    await renderLinked();
+   }catch(err){
+    if(err.code==="auth/credential-already-in-use"||err.code==="auth/email-already-in-use")toast("هذا الحساب مرتبط بحساب CloverChat آخر. لن ندمج الحسابات تلقائيًا.");
+    else if(err.code==="auth/provider-already-linked")toast("هذا الحساب مرتبط بالفعل");
+    else if(err.code==="auth/popup-blocked")toast("اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى");
+    else if(err.code==="auth/requires-recent-login")toast("سجّل الخروج ثم ادخل مجددًا، وبعدها أعد المحاولة");
+    else if(err.code!=="auth/popup-closed-by-user"&&err.code!=="auth/cancelled-popup-request")toast(err.message||"تعذر تحديث الحساب المرتبط");
+   }finally{button.disabled=false;}
+  });
+ }
+ addTitle("رقم الهاتف");
+ addButton(box,myPhone?"✅ الهاتف المرتبط: "+myPhone:"ربط رقم هاتف عبر Telegram",async()=>{
   if(myPhone){
    if(!confirm("هل تريد إلغاء ربط رقم الهاتف؟"))return;
-   try{await api("/phone/unlink",{idToken:await current.getIdToken()});myPhone="";toast("تم إلغاء ربط رقم الهاتف");renderLinked();}
+   try{await api("/phone/unlink",{idToken:await current.getIdToken()});myPhone="";toast("تم إلغاء ربط رقم الهاتف");await renderLinked();}
    catch(e){toast(e.message||"تعذر إلغاء ربط الرقم");}
    return;
   }
