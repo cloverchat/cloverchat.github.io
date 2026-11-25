@@ -14,6 +14,7 @@ const TS=firebase.database.ServerValue.TIMESTAMP;
 let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null;
 const cache=Object.create(null);
 let myPhone="",newPhoto=null,lp="",sending=false,bootUid=null;
+let aiMode=false,aiHistory=[];
 let chatOpenToken=0,listRenderToken=0;
 
 function icons(){
@@ -253,6 +254,46 @@ $("findIn").addEventListener("keydown",async e=>{
   e.target.value="";openChat(uid);
  }catch(err){toast(err.message||"تعذر البحث عن المستخدم");}
 });
+function renderAIMessage(text,mine=false){
+ const box=$("msgs"),line=document.createElement("div");
+ line.className="message-line"+(mine?" mine":"");
+ const av=document.createElement("img");
+ av.className="message-avatar";
+ av.src=mine?(prof?.photo||NOAV):LOGO;
+ av.alt=mine?"أنت":"Clover AI";
+ const d=document.createElement("div");
+ d.className="m"+(mine?" me":"");
+ d.textContent=text;
+ const tm=document.createElement("i");
+ tm.textContent=fmt(Date.now());
+ d.append(tm);
+ line.append(av,d);
+ box.append(line);
+ box.scrollTop=box.scrollHeight;
+}
+function openAIChat(){
+ ++chatOpenToken;
+ aiMode=true;
+ if(msgRef)msgRef.off();
+ msgRef=null;
+ peer={uid:"__ai",name:"Clover AI",photo:LOGO};
+ cur="__ai";
+ $("empty").hidden=true;
+ $("room").hidden=false;
+ $("app").classList.add("open");
+ $("peerName").textContent="Clover AI";
+ $("peerUser").textContent="مساعدك الذكي";
+ $("peerAv").src=LOGO;
+ $("peerAv").style.cursor="default";
+ $("peerName").style.cursor="default";
+ $("peerAv").onclick=null;
+ $("peerName").onclick=null;
+ $("msgs").replaceChildren();
+ if(!aiHistory.length){
+  renderAIMessage("أهلًا بك! أنا Clover AI ☘\nإزاي أقدر أساعدك؟");
+ }
+ aiHistory.forEach(m=>renderAIMessage(m.content,m.role==="user"));
+}
 async function openChat(uid){
  const openId=++chatOpenToken;
  try{
