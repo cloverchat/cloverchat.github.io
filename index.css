@@ -389,3 +389,17 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 #app.app>.side,#app.app>.pane{height:100%;min-height:0;}
 #app .pane>#room{height:100%;min-height:0;min-width:0;}
 #app .message-composer{flex-shrink:0;}
+
+
+/* نافذة عرض الملف الشخصي لأي مستخدم */
+.user-view-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,10,12,.78);backdrop-filter:blur(13px)}
+.user-view-overlay[hidden]{display:none}
+.user-view-card{position:relative;width:min(100%,390px);padding:34px 28px 27px;text-align:center;border:1px solid rgba(125,230,178,.2);border-radius:26px;background:linear-gradient(145deg,#1b3438,#102529);box-shadow:0 28px 90px rgba(0,0,0,.48);color:#effff8}
+.user-view-close{position:absolute;top:13px;left:14px;width:35px;height:35px;border:1px solid rgba(255,255,255,.1);border-radius:50%;background:rgba(255,255,255,.06);color:#d9eee6;font-size:25px;cursor:pointer}
+.user-view-photo{display:block;width:112px;height:112px;margin:4px auto 18px;object-fit:cover;border-radius:50%;border:3px solid #27d995;box-shadow:0 0 0 7px rgba(39,217,149,.09)}
+.user-view-card h2{margin:0 0 7px;font-size:1.35rem;font-weight:900}
+.user-view-username{min-height:22px;color:#62e8b0;direction:ltr;font-size:.9rem}
+.user-view-bio{min-height:48px;margin:18px 0;color:#b8d0c8;line-height:1.9;overflow-wrap:anywhere}
+.user-view-chat{width:100%;min-height:48px;margin-top:8px;border:0;border-radius:13px;background:linear-gradient(110deg,#2ce39a,#0ba779);color:#05271b;font-weight:900;cursor:pointer}
+#peerAv,#peerName{cursor:pointer}
+#peerAv:focus-visible,#peerName:focus-visible,.message-avatar:focus-visible{outline:2px solid #75efb3;outline-offset:4px}
