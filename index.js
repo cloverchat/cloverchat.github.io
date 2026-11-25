@@ -121,7 +121,7 @@ async function startTelegramLogin(){
   if(tgWindow)tgWindow.location=d.link;else toast("اسمح بفتح النوافذ المنبثقة لفتح Telegram");
   $("codeBox").hidden=false;
   toast("افتح بوت CloverChat في Telegram واضغط Start لاستلام الكود");
- }catch(e){toast(e.message||"تعذر بدء تسجيل الدخول عبر Telegram");}
+ }catch(e){if(tgWindow&&!tgWindow.closed)tgWindow.close();toast(e.message||"تعذر بدء تسجيل الدخول عبر Telegram");}
  finally{b.disabled=false;}
 }
 $("telegramBtn").onclick=startTelegramLogin;
@@ -301,6 +301,8 @@ async function renderLinked(){
  const box=$("linked"),current=auth.currentUser;
  if(!box||!current)return;
  box.replaceChildren();
+ try{await current.reload();}catch(e){console.warn("تعذر تحديث بيانات الحسابات المرتبطة",e);}
+ const fresh=auth.currentUser||current;
  const addButton=(parent,label,action)=>{
   const b=document.createElement("button");b.type="button";b.className="btn ghost";b.textContent=label;b.onclick=action;parent.append(b);return b;
  };
@@ -311,7 +313,7 @@ async function renderLinked(){
  ];
  addTitle("حسابات تسجيل الدخول");
  for(const item of providers){
-  const linked=(current.providerData||[]).some(p=>p.providerId===item.id);
+  const linked=(fresh.providerData||[]).some(p=>p.providerId===item.id);
   addButton(box,linked?"✅ "+item.name+" — مرتبط":"ربط "+item.name,async e=>{
    const button=e.currentTarget;button.disabled=true;
    try{
@@ -324,8 +326,9 @@ async function renderLinked(){
      await fresh.reload();
      toast("تم إلغاء ربط "+item.name);
     }else{
-     await auth.currentUser.linkWithPopup(item.make());
-     await auth.currentUser.reload();
+     const result=await auth.currentUser.linkWithPopup(item.make());
+     me=result.user;
+     await me.reload();
      toast("تم ربط "+item.name+" بحسابك الحالي");
     }
     await renderLinked();
@@ -405,7 +408,7 @@ $("plBtn").onclick=async()=>{
    }
   }
   throw new Error("انتهت مهلة انتظار مشاركة جهة الاتصال. ابدأ المحاولة مرة أخرى.");
- }catch(e){toast(e.message||"تعذر ربط الهاتف");}
+ }catch(e){if(tgWindow&&!tgWindow.closed)tgWindow.close();$("plBox").hidden=true;toast(e.message||"تعذر ربط الهاتف");}
  finally{b.disabled=false;}
 };
 $("plCodeBtn").onclick=()=>toast("شارك جهة الاتصال من داخل محادثة البوت في Telegram؛ لا يوجد كود SMS.");
