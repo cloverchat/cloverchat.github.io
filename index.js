@@ -289,6 +289,7 @@ function openAIChat(){
  $("peerAv").onclick=null;
  $("peerName").onclick=null;
  $("msgs").replaceChildren();
+ $("imgBtn").hidden=true;
  if(!aiHistory.length){
   renderAIMessage("أهلًا بك! أنا Clover AI ☘\nإزاي أقدر أساعدك؟");
  }
@@ -351,6 +352,7 @@ async function push(m){
  up["userChats/"+targetPeer.uid+"/"+targetChat]={with:sender.uid,last,time:TS};
  await db.ref().update(up);
 }
+
 $("form").onsubmit=async e=>{
  e.preventDefault();
  if(sending)return;
@@ -361,11 +363,27 @@ $("form").onsubmit=async e=>{
  if(b)b.disabled=true;
  input.value="";
  try{
-  await push({text:text.slice(0,500)});
+  if(aiMode){
+   if(aiHistory.length>18)aiHistory.splice(0,2);
+   aiHistory.push({role:"user",content:text});
+   renderAIMessage(text,true);
+   const d=await api("/ai/chat",{
+    idToken:await me.getIdToken(),
+    messages:aiHistory
+   });
+   if(typeof d.reply!=="string")throw new Error("Invalid AI response");
+   aiHistory.push({role:"assistant",content:d.reply});
+   renderAIMessage(d.reply,false);
+  }else{
+   await push({text:text.slice(0,500)});
+  }
  }catch(er){
+  if(aiMode){
+   aiHistory.pop();
+   $("msgs").lastElementChild?.remove();
+  }
   toast("تعذر الإرسال");
-  if(!input.value)input.value=text;
-  else input.value=text+"\n"+input.value;
+  input.value=text+(input.value?"\n"+input.value:"");
  }finally{
   sending=false;
   if(b)b.disabled=false;
