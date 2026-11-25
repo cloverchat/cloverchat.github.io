@@ -296,6 +296,8 @@ function openAIChat(){
 }
 async function openChat(uid){
  const openId=++chatOpenToken;
+ aiMode=false;
+ $("imgBtn").hidden=false;
  try{
   const G=uid==="__global";
   const nextPeer=G?{uid:"__global",name:"🌍 الشات العام",photo:LOGO,global:true}:await getUser(uid);
