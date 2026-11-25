@@ -1,3 +1,4 @@
+
 "use strict";
 /* CloverChat — Firebase Compat 8.10.1 */
 firebase.initializeApp({
@@ -180,6 +181,12 @@ async function boot(){
  ]);
  if(me?.uid!==uid)return;
  myPhone=phoneSnap.val()||"";
+ if(me.phoneNumber){
+  try{
+   await api("/phone/link",{idToken:await me.getIdToken(true)});
+   myPhone=me.phoneNumber;
+  }catch(e){console.warn("Phone index sync failed:",e);}
+ }
  if(!s.exists()){
   prof=null;
   $("suName").value=me.displayName||"";
@@ -230,12 +237,19 @@ $("findIn").addEventListener("keydown",async e=>{
  if(e.key!=="Enter")return;e.preventDefault();
  const q=e.target.value.trim().toLowerCase().replace(/^@/,"");if(!q)return;
  try{
-  const isP=/^\+?\d{8,15}$/.test(q),key=isP?q.replace(/\D/g,""):q;
-  const s=await db.ref(isP?"phones/"+key:"usernames/"+key).once("value");
-  if(!s.exists())return toast("مفيش مستخدم بالاسم ده");
-  if(s.val()===me.uid)return toast("ده حسابك 😄");
-  e.target.value="";openChat(s.val());
- }catch(err){toast("تعذر البحث عن المستخدم");}
+  let uid;
+  if(/^[+\d\s()-]+$/.test(q)&&/\d{8,15}/.test(q)){
+   const phoneValue=normalizePhone(q);
+   const result=await api("/phone/find",{idToken:await me.getIdToken(),phone:phoneValue});
+   uid=result.uid;
+  }else{
+   const s=await db.ref("usernames/"+q).once("value");
+   if(!s.exists())return toast("مفيش مستخدم بالاسم ده");
+   uid=s.val();
+  }
+  if(uid===me.uid)return toast("ده حسابك 😄");
+  e.target.value="";openChat(uid);
+ }catch(err){toast(err.message||"تعذر البحث عن المستخدم");}
 });
 async function openChat(uid){
  const openId=++chatOpenToken;
@@ -419,7 +433,7 @@ $("plBtn").onclick=async()=>{
   const verifier=getRecaptcha("link-recaptcha-container","link");
   linkPhoneVerificationId=await new firebase.auth.PhoneAuthProvider(auth).verifyPhoneNumber(lp,verifier);
   $("plBox").hidden=false;
-  toast("تم إرسال كود SMS إلى الرقم الجديد");
+  toast("تم إرسال كود SMS للرقم الجديد");
  }catch(e){toast(e.message||"تعذر إرسال كود SMS");}
  finally{b.disabled=false;}
 };
@@ -439,10 +453,17 @@ $("plCodeBtn").onclick=async()=>{
   }
   await current.reload();
   myPhone=current.phoneNumber||lp;
+  let phoneIndexed=false;
+  try{
+   await api("/phone/link",{idToken:await current.getIdToken(true)});
+   phoneIndexed=true;
+  }catch(indexError){
+   console.error("Phone index sync failed:",indexError);
+  }
   linkPhoneVerificationId=null;
   $("plBox").hidden=true;
   $("plCode").value="";
-  toast("تم ربط الهاتف بالحساب الحالي بنجاح");
+  toast(phoneIndexed?"تم ربط الهاتف وتفعيله للبحث بنجاح":"تم ربط الهاتف، لكن تعذر تفعيله للبحث الآن. أعد تحميل الصفحة للمحاولة مجددًا.");
   show("app");renderLinked();$("modal").hidden=false;
  }catch(e){
   toast(e.code==="auth/credential-already-in-use"||e.code==="auth/phone-number-already-exists"?"الرقم مرتبط بحساب آخر بالفعل":e.message||"فشل ربط الرقم");
