@@ -209,6 +209,15 @@ function watchList(){
    const users=await Promise.all(items.map(i=>getUser(i.with)));
    if(renderId!==listRenderToken||!me||!$("chatList"))return;
    const box=$("chatList");box.replaceChildren();
+   const ai=document.createElement("div");
+   ai.className="row ai-chat-row";
+   ai.id="aiChatRow";
+   ai.setAttribute("role","button");
+   ai.tabIndex=0;
+   ai.innerHTML='<span class="ai-avatar"><i data-lucide="sparkles"></i></span><div class="t"><b>Clover AI</b><div class="l">مساعدك الذكي</div></div><span class="ai-tag">AI</span>';
+   ai.onclick=()=>openAIChat();
+   ai.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAIChat();}};
+   box.append(ai);
    const g=document.createElement("div");g.className="row"+(cur==="__global"?" on":"");
    const ga=document.createElement("img");ga.className="av";ga.src=LOGO;ga.alt="";
    const gt=document.createElement("div");gt.className="t";
