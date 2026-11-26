@@ -338,7 +338,9 @@ line.addEventListener("pointerup",e=>{
  swipeStart=null;
  if(dx>65&&Math.abs(dy)<55){
   replyTarget={id:s.key,uid:m.uid,name:sender.name||"مستخدم",text:m.text||"",image:m.image||""};
-  toast("تم تحديد الرسالة للرد عليها");
+  $("replyName").textContent=replyTarget.name;
+$("replyText").textContent=replyTarget.text||(replyTarget.image?"📷 صورة":"رسالة");
+$("replyPreview").hidden=false;
  }
 });
 line.addEventListener("pointercancel",()=>swipeStart=null);
