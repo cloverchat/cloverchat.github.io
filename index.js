@@ -15,6 +15,11 @@ let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null;
 const cache=Object.create(null);
 let myPhone="",newPhoto=null,lp="",sending=false,bootUid=null;
 let aiMode=false,aiHistory=[],replyTarget=null;
+function clearReply(){
+ replyTarget=null;
+ const preview=$("replyPreview");
+ if(preview)preview.hidden=true;
+}
 let chatOpenToken=0,listRenderToken=0;
 
 function icons(){
