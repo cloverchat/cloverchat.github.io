@@ -409,3 +409,5 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .ai-tag{font-size:11px;font-weight:700;color:#8ee6ad;background:#174b32;padding:4px 8px;border-radius:20px}
 .ai-chat-row .t{flex:1;min-width:0}
 .ai-chat-row .l{font-size:12px;color:var(--muted)}
+
+.m a{color:#4da3ff;text-decoration:underline;overflow-wrap:anywhere}
