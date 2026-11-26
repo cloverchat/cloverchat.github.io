@@ -204,15 +204,23 @@ function stopAll(){
  const room=$("room"),empty=$("empty"),list=$("chatList");
  if(room)room.hidden=true;if(empty)empty.hidden=false;if(list)list.replaceChildren();
 }
+
 function watchList(){
  if(listRef)listRef.off();
  listRef=db.ref("userChats/"+me.uid);
  listRef.on("value",async s=>{
   const renderId=++listRenderToken;
   try{
-   const items=[];s.forEach(c=>items.push({id:c.key,...(c.val()||{})}));
+   const items=[];
+   s.forEach(c=>items.push({id:c.key,...(c.val()||{})}));
    items.sort((a,b)=>(b.time||0)-(a.time||0));
-   const users=await Promise.all(items.map(i=>getUser(i.with)));
+   const users=await Promise.all(items.map(async i=>{
+    try{return await getUser(i.with);}
+    catch(e){
+     console.error("تعذر تحميل المستخدم:",i.with,e);
+     return {uid:i.with,name:"مستخدم",photo:""};
+    }
+   }));
    if(renderId!==listRenderToken||!me||!$("chatList"))return;
    const box=$("chatList");box.replaceChildren();
    const ai=document.createElement("div");
@@ -238,10 +246,12 @@ function watchList(){
     const l=document.createElement("div");l.className="l";l.textContent=i.last||"";
     const tm=document.createElement("small");tm.className="muted";tm.textContent=fmt(i.time);
     t.append(nm,l);row.append(av,t,tm);row.onclick=()=>openChat(u.uid);box.append(row);
-   });icons();
+   });
+   icons();
   }catch(e){console.error(e);toast("تعذر تحميل قائمة المحادثات");}
  });
 }
+
 $("findIn").addEventListener("keydown",async e=>{
  if(e.key!=="Enter")return;e.preventDefault();
  const q=e.target.value.trim().toLowerCase().replace(/^@/,"");if(!q)return;
