@@ -410,7 +410,9 @@ $("form").onsubmit=async e=>{
    aiHistory.push({role:"assistant",content:d.reply});
    renderAIMessage(d.reply,false);
   }else{
-   await push({text:text.slice(0,500)});
+   const reply=replyTarget?{replyTo:{id:replyTarget.id,uid:replyTarget.uid,name:replyTarget.name,text:replyTarget.text.slice(0,200)}}:{};
+await push({text:text.slice(0,500),...reply});
+replyTarget=null;
   }
  }catch(er){
   if(aiMode){
