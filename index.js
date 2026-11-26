@@ -286,30 +286,38 @@ function renderAIMessage(text,mine=false){
  box.append(line);
  box.scrollTop=box.scrollHeight;
 }
-function openAIChat(){
- ++chatOpenToken;
+
+async function openAIChat(){
+ const openId=++chatOpenToken,uid=me?.uid;
+ if(!uid)return;
  aiMode=true;
  if(msgRef)msgRef.off();
  msgRef=null;
  peer={uid:"__ai",name:"Clover AI",photo:LOGO};
  cur="__ai";
- $("empty").hidden=true;
- $("room").hidden=false;
- $("app").classList.add("open");
- $("peerName").textContent="Clover AI";
- $("peerUser").textContent="مساعدك الذكي";
- $("peerAv").src=LOGO;
- $("peerAv").style.cursor="default";
- $("peerName").style.cursor="default";
- $("peerAv").onclick=null;
- $("peerName").onclick=null;
- $("msgs").replaceChildren();
- $("imgBtn").hidden=true;
- if(!aiHistory.length){
-  renderAIMessage("أهلًا بك! أنا Clover AI ☘\nإزاي أقدر أساعدك؟");
+ $("empty").hidden=true;$("room").hidden=false;$("app").classList.add("open");
+ $("peerName").textContent="Clover AI";$("peerUser").textContent="مساعدك الذكي";
+ $("peerAv").src=LOGO;$("peerAv").style.cursor="default";$("peerName").style.cursor="default";
+ $("peerAv").onclick=null;$("peerName").onclick=null;
+ $("msgs").replaceChildren();$("imgBtn").hidden=true;
+ try{
+  const snap=await db.ref("aiChats/"+uid+"/messages").once("value");
+  if(openId!==chatOpenToken||me?.uid!==uid)return;
+  aiHistory=[];
+  snap.forEach(child=>{
+   const m=child.val()||{};
+   if((m.role==="user"||m.role==="assistant")&&typeof m.content==="string")
+    aiHistory.push({role:m.role,content:m.content});
+  });
+  $("msgs").replaceChildren();
+  if(!aiHistory.length)renderAIMessage("أهلًا بك! أنا Clover AI ☘\nإزاي أقدر أساعدك؟");
+  else aiHistory.forEach(m=>renderAIMessage(m.content,m.role==="user"));
+ }catch(e){
+  console.error(e);
+  toast("تعذر تحميل محادثة Clover AI");
  }
- aiHistory.forEach(m=>renderAIMessage(m.content,m.role==="user"));
 }
+
 async function openChat(uid){
  const openId=++chatOpenToken;
  aiMode=false;
@@ -461,33 +469,43 @@ $("form").onsubmit=async e=>{
  const b=$("form").querySelector('[type="submit"]');
  if(b)b.disabled=true;
  input.value="";
- try{
-  if(aiMode){
-   if(aiHistory.length>18)aiHistory.splice(0,2);
-   aiHistory.push({role:"user",content:text});
-   renderAIMessage(text,true);
-   const d=await api("/ai/chat",{
-    idToken:await me.getIdToken(),
-    messages:aiHistory
-   });
-   if(typeof d.reply!=="string")throw new Error("Invalid AI response");
-   aiHistory.push({role:"assistant",content:d.reply});
-   renderAIMessage(d.reply,false);
-  }else{
+let aiUserSaved=false;
+try{  
+if(aiMode){
+ const uid=me.uid,openId=chatOpenToken;
+ const userMessage={role:"user",content:text};
+ const history=[...aiHistory,userMessage];
+ await db.ref("aiChats/"+uid+"/messages").push().set({...userMessage,time:TS});aiUserSaved=true;
+ if(aiMode&&cur==="__ai"&&chatOpenToken===openId){
+  aiHistory=history;
+  renderAIMessage(text,true);
+ }
+ const d=await api("/ai/chat",{
+  idToken:await me.getIdToken(),
+  messages:history.slice(-18)
+ });
+ if(typeof d.reply!=="string")throw new Error("Invalid AI response");
+ const assistantMessage={role:"assistant",content:d.reply};
+ await db.ref("aiChats/"+uid+"/messages").push().set({...assistantMessage,time:TS});
+ if(aiMode&&cur==="__ai"&&chatOpenToken===openId){
+  aiHistory=[...history,assistantMessage];
+  renderAIMessage(d.reply,false);
+ }
+}else{
+
    const reply=replyTarget?{replyTo:{id:replyTarget.id,uid:replyTarget.uid,name:replyTarget.name,text:replyTarget.text.slice(0,200)}}:{};
 await push({text:text.slice(0,500),...reply});
 replyTarget=null;
 $("replyPreview").hidden=true;
   }
  }catch(er){
-  if(aiMode){
-   aiHistory.pop();
-   $("msgs").lastElementChild?.remove();
-  }
+   if(aiMode){
+ console.warn("رسالة المستخدم محفوظة، لكن تعذر الحصول على رد من Clover AI");
+}
   console.error("Clover AI error:",er);
  toast(er.message||"تعذر الإرسال");
-  input.value=text+(input.value?"\n"+input.value:"");
- }finally{
+if(!aiMode||!aiUserSaved)input.value=text+(input.value?"\n"+input.value:"");
+}finally{
   sending=false;
   if(b)b.disabled=false;
  }
