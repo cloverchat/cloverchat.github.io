@@ -408,8 +408,21 @@ line.addEventListener("pointercancel",()=>{
  }
  d.append(document.createTextNode(text.slice(last)));
 }
-   const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);
-   line.append(av,d);box.append(line);box.scrollTop=box.scrollHeight;
+const replyBtn=document.createElement("button");
+replyBtn.type="button";
+replyBtn.className="reply-btn";
+replyBtn.textContent="↩";
+replyBtn.title="الرد على الرسالة";
+replyBtn.setAttribute("aria-label","الرد على الرسالة");
+replyBtn.onclick=()=>{
+ replyTarget={id:s.key,uid:m.uid,name:sender.name||"مستخدم",text:m.text||"",image:m.image||""};
+ $("replyName").textContent=replyTarget.name;
+ $("replyText").textContent=replyTarget.text||(replyTarget.image?"📷 صورة":"رسالة");
+ $("replyPreview").hidden=false;
+};
+d.append(replyBtn);
+const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);
+  line.append(av,d);box.append(line);box.scrollTop=box.scrollHeight;
   },e=>{if(openId!==chatOpenToken)return;console.error(e);toast("تعذر تحميل الرسائل");});
  }catch(e){if(openId===chatOpenToken){console.error(e);toast("تعذر فتح المحادثة");}}
 }
