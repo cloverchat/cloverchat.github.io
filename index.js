@@ -325,7 +325,8 @@ async function openChat(uid){
     catch(err){console.warn("تعذر تحميل ملف مرسل الرسالة",err);}
    }
    if(openId!==chatOpenToken)return;
-   const line.className="message-line"+(mine?" mine":"");
+   const line=document.createElement("div");
+line.className="message-line"+(mine?" mine":"");
 line.style.touchAction="pan-y";
 let swipeStart=null;
 line.addEventListener("pointerdown",e=>{
