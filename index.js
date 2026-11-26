@@ -325,7 +325,23 @@ async function openChat(uid){
     catch(err){console.warn("تعذر تحميل ملف مرسل الرسالة",err);}
    }
    if(openId!==chatOpenToken)return;
-   const line=document.createElement("div");line.className="message-line"+(mine?" mine":"");
+   const line.className="message-line"+(mine?" mine":"");
+line.style.touchAction="pan-y";
+let swipeStart=null;
+line.addEventListener("pointerdown",e=>{
+ if(e.target.closest("a,button"))return;
+ swipeStart={x:e.clientX,y:e.clientY};
+});
+line.addEventListener("pointerup",e=>{
+ if(!swipeStart)return;
+ const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;
+ swipeStart=null;
+ if(dx>65&&Math.abs(dy)<55){
+  replyTarget={id:s.key,uid:m.uid,name:sender.name||"مستخدم",text:m.text||"",image:m.image||""};
+  toast("تم تحديد الرسالة للرد عليها");
+ }
+});
+line.addEventListener("pointercancel",()=>swipeStart=null);
    const av=document.createElement("img");av.className="message-avatar";av.src=m.photo||sender.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
    av.onerror=()=>{av.onerror=null;av.src=NOAV;};
    av.title="عرض الملف الشخصي";av.style.cursor="pointer";av.onclick=()=>showUserProfile(m.uid);
