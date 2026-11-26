@@ -333,7 +333,6 @@ async function openChat(uid){
    const line=document.createElement("div");
 line.className="message-line"+(mine?" mine":"");
 line.style.touchAction="pan-y";
-let swipeStart=null;
 let swipeStart=null,swiping=false;
 line.addEventListener("pointerdown",e=>{
  if(e.target.closest("a,button"))return;
