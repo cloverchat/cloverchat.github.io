@@ -140,6 +140,10 @@
 <div class="header-actions"><span class="secure-label"><i data-lucide="shield-check" aria-hidden="true"></i>محادثة</span></div>
 </header>
 <div id="msgs" class="msgs" role="log" aria-live="polite" aria-relevant="additions text" aria-label="الرسائل"></div>
+<div id="replyPreview" class="reply-preview" hidden>
+<div><b id="replyName"></b><p id="replyText"></p></div>
+<button id="cancelReply" type="button" aria-label="إلغاء الرد">×</button>
+</div>
 <form id="form" class="message-composer" autocomplete="off">
 <button id="imgBtn" type="button" class="icon-btn attach-btn" title="إرفاق صورة" aria-label="إرفاق صورة"><i data-lucide="image-plus" aria-hidden="true"></i></button>
 <input id="imgIn" type="file" accept="image/*" hidden aria-label="اختيار صورة">
