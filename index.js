@@ -269,6 +269,43 @@ $("findIn").addEventListener("keydown",async e=>{
   e.target.value="";openChat(uid);
  }catch(err){toast(err.message||"تعذر البحث عن المستخدم");}
 });
+
+function renderFormattedText(el,value){
+ const lines=String(value||"").split("\n");
+ function inline(parent,str){
+  const re=/```([\s\S]+?)```|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_|~([^~\n]+)~|(https?:\/\/[^\s<>"']+)/g;
+  let last=0,m;
+  while((m=re.exec(str))){
+   parent.append(document.createTextNode(str.slice(last,m.index)));
+   let node;
+   if(m[1]!==undefined){node=document.createElement("code");node.className="wa-code-block";node.textContent=m[1];}
+   else if(m[2]!==undefined){node=document.createElement("code");node.className="wa-inline-code";node.textContent=m[2];}
+   else if(m[3]!==undefined){node=document.createElement("strong");node.textContent=m[3];}
+   else if(m[4]!==undefined){node=document.createElement("em");node.textContent=m[4];}
+   else if(m[5]!==undefined){node=document.createElement("del");node.textContent=m[5];}
+   else{node=document.createElement("a");node.href=m[6];node.textContent=m[6];node.target="_blank";node.rel="noopener noreferrer";}
+   parent.append(node);
+   last=re.lastIndex;
+  }
+  parent.append(document.createTextNode(str.slice(last)));
+ }
+ lines.forEach((line,i)=>{
+  const quote=line.match(/^>\s?(.*)$/);
+  const bullet=line.match(/^[-*]\s+(.+)$/);
+  const numbered=line.match(/^(\d+)\.\s+(.+)$/);
+  if(quote){
+   const q=document.createElement("blockquote");q.className="wa-quote";inline(q,quote[1]);el.append(q);
+  }else if(bullet||numbered){
+   const item=document.createElement("div");item.className="wa-list-item";
+   const marker=document.createElement("span");
+   marker.textContent=bullet?"•":numbered[1]+".";
+   item.append(marker,document.createTextNode(" "));
+   inline(item,bullet?bullet[1]:numbered[2]);el.append(item);
+  }else inline(el,line);
+  if(i<lines.length-1)el.append(document.createElement("br"));
+ });
+}
+
 function renderAIMessage(text,mine=false){
  const box=$("msgs"),line=document.createElement("div");
  line.className="message-line"+(mine?" mine":"");
@@ -278,7 +315,7 @@ function renderAIMessage(text,mine=false){
  av.alt=mine?"أنت":"Clover AI";
  const d=document.createElement("div");
  d.className="m"+(mine?" me":"");
- d.textContent=text;
+ renderFormattedText(d,text);
  const tm=document.createElement("i");
  tm.textContent=fmt(Date.now());
  d.append(tm);
