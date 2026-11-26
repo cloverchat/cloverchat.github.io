@@ -317,7 +317,22 @@ async function openAIChat(){
   toast("تعذر تحميل محادثة Clover AI");
  }
 }
-
+async function deleteMessage(id,line){
+ if(!me||!id||!line)return;
+ if(!confirm("هل تريد حذف هذه الرسالة نهائيًا؟"))return;
+ const uid=me.uid,isGlobal=peer?.global,chatId=cur;
+ const path=isGlobal?"chat/"+id:"chats/"+chatId+"/messages/"+id;
+ const btn=line.querySelector(".delete-btn");
+ if(btn)btn.disabled=true;
+ try{
+  await db.ref(path).remove();
+  toast("تم حذف الرسالة");
+ }catch(e){
+  console.error("Delete message error:",e);
+  toast("تعذر حذف الرسالة");
+  if(btn)btn.disabled=false;
+ }
+}
 async function openChat(uid){
  const openId=++chatOpenToken;
  aiMode=false;
@@ -350,6 +365,7 @@ async function openChat(uid){
    if(openId!==chatOpenToken)return;
    const line=document.createElement("div");
 line.className="message-line"+(mine?" mine":"");
+line.dataset.messageId=s.key;
 line.style.touchAction="pan-y";
 let swipeStart=null,swiping=false;
 line.addEventListener("pointerdown",e=>{
@@ -438,11 +454,26 @@ replyBtn.onclick=()=>{
  $("replyText").textContent=replyTarget.text||(replyTarget.image?"📷 صورة":"رسالة");
  $("replyPreview").hidden=false;
 };
+const deleteBtn=document.createElement("button");
+deleteBtn.type="button";
+deleteBtn.className="delete-btn";
+deleteBtn.textContent="حذف";
+deleteBtn.title="حذف رسالتك";
+deleteBtn.onclick=()=>deleteMessage(s.key,line);
+if(mine)line.append(deleteBtn);
+line.append(av,d,replyBtn);
+box.append(line);
+box.scrollTop=box.scrollHeight;
 const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);
 line.append(av,d,replyBtn);
 box.append(line);
 box.scrollTop=box.scrollHeight;
   },e=>{if(openId!==chatOpenToken)return;console.error(e);toast("تعذر تحميل الرسائل");});
+  msgRef.on("child_removed",s=>{
+ if(openId!==chatOpenToken)return;
+ const line=Array.from(box.children).find(el=>el.dataset.messageId===s.key);
+ if(line)line.remove();
+});
  }catch(e){if(openId===chatOpenToken){console.error(e);toast("تعذر فتح المحادثة");}}
 }
 $("backBtn").onclick=()=>$("app").classList.remove("open");
