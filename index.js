@@ -412,8 +412,15 @@ async function openChat(uid){
   if(msgRef)msgRef.off();
   clearMessageProfileWatches();
   const box=$("msgs");box.replaceChildren();
-  msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).limitToLast(100);
-  msgRef.on("child_added",async s=>{
+  msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).orderByChild("time").limitToLast(100);
+  let renderQueue=Promise.resolve();
+  msgRef.on("child_added",s=>{
+   renderQueue=renderQueue.then(()=>renderChatMessage(s)).catch(e=>{
+    console.error(e);
+    if(openId===chatOpenToken)toast("تعذر تحميل الرسائل");
+   });
+  });
+  async function renderChatMessage(s){
    if(openId!==chatOpenToken)return;
    const m=s.val();if(!m||!m.uid)return;
    const mine=m.uid===me.uid;
@@ -510,7 +517,7 @@ actions.append(replyBtn);
 line.append(av,d,actions);
 box.append(line);
 box.scrollTop=box.scrollHeight;
-  },e=>{if(openId!==chatOpenToken)return;console.error(e);toast("تعذر تحميل الرسائل");});
+  }
   msgRef.on("child_removed",s=>{
  if(openId!==chatOpenToken)return;
  const line=Array.from(box.children).find(el=>el.dataset.messageId===s.key);
