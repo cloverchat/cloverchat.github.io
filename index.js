@@ -335,7 +335,26 @@ async function openChat(uid){
     const im=document.createElement("img");im.src=m.image;im.loading="lazy";im.alt="صورة مرسلة";
     im.onerror=()=>im.remove();im.onload=()=>{if(openId===chatOpenToken)box.scrollTop=box.scrollHeight;};d.append(im);
    }
-   if(m.text)d.append(document.createTextNode(String(m.text).slice(0,500)));
+   if(m.text){
+ const text=String(m.text).slice(0,500);
+ const re=/https?:\/\/[^\s<>"']+/gi;
+ let last=0,match;
+ while((match=re.exec(text))){
+  d.append(document.createTextNode(text.slice(last,match.index)));
+  let url=match[0],end=url.length;
+  while(end>0&&/[.,!?;:،؛؟)\]}]$/.test(url.slice(-1)))url=url.slice(0,-1),end=url.length;
+  const a=document.createElement("a");
+  a.href=url;
+  a.textContent=url;
+  a.target="_blank";
+  a.rel="noopener noreferrer";
+  a.style.color="#4da3ff";
+  d.append(a);
+  d.append(document.createTextNode(match[0].slice(end)));
+  last=match.index+match[0].length;
+ }
+ d.append(document.createTextNode(text.slice(last)));
+}
    const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);
    line.append(av,d);box.append(line);box.scrollTop=box.scrollHeight;
   },e=>{if(openId!==chatOpenToken)return;console.error(e);toast("تعذر تحميل الرسائل");});
