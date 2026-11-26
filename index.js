@@ -12,7 +12,7 @@ const NOAV="https://i.imgur.com/HeIi0wU.png";
 const LOGO="https://acrft.github.io/images/achat.png";
 const TS=firebase.database.ServerValue.TIMESTAMP;
 let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null;
-const cache=Object.create(null);
+const cache=Object.create(null),profileRefs=Object.create(null);
 let myPhone="",newPhoto=null,lp="",sending=false,bootUid=null;
 let aiMode=false,aiHistory=[],replyTarget=null;
 function clearReply(){
@@ -95,6 +95,27 @@ async function getUser(uid){
   };
  }
  return cache[uid];
+}
+
+function clearMessageProfileWatches(){
+ Object.values(profileRefs).forEach(x=>x.ref.off("value",x.handler));
+ Object.keys(profileRefs).forEach(uid=>delete profileRefs[uid]);
+}
+
+function watchMessageProfile(uid){
+ if(!uid||profileRefs[uid])return;
+ const ref=db.ref("users/"+uid);
+ const handler=s=>{
+  const data=s.val()||{};
+  const current={uid,...data,name:data.name||"حساب محذوف",photo:data.photo||"",username:data.username||""};
+  cache[uid]=current;
+  if(uid===me?.uid)prof={...(prof||{}),...current};
+  document.querySelectorAll(".message-avatar").forEach(av=>{
+   if(av.dataset.avatarUid===uid)av.src=current.photo||NOAV;
+  });
+ };
+ ref.on("value",handler);
+ profileRefs[uid]={ref,handler};
 }
 let userViewModal=null;
 async function showUserProfile(uid){
@@ -200,6 +221,7 @@ async function boot(){
 function stopAll(){
  chatOpenToken++;listRenderToken++;
  if(msgRef)msgRef.off();if(listRef)listRef.off();
+ clearMessageProfileWatches();
  msgRef=listRef=null;cur=peer=null;
  const room=$("room"),empty=$("empty"),list=$("chatList");
  if(room)room.hidden=true;if(empty)empty.hidden=false;if(list)list.replaceChildren();
@@ -329,6 +351,7 @@ async function openAIChat(){
  if(!uid)return;
  aiMode=true;
  if(msgRef)msgRef.off();
+ clearMessageProfileWatches();
  msgRef=null;
  peer={uid:"__ai",name:"Clover AI",photo:LOGO};
  cur="__ai";
@@ -387,6 +410,7 @@ async function openChat(uid){
   $("peerAv").style.cursor=G?"default":"pointer";$("peerName").style.cursor=G?"default":"pointer";
   $("peerAv").onclick=()=>{if(!G)showUserProfile(peer.uid);};$("peerName").onclick=()=>{if(!G)showUserProfile(peer.uid);};
   if(msgRef)msgRef.off();
+  clearMessageProfileWatches();
   const box=$("msgs");box.replaceChildren();
   msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).limitToLast(100);
   msgRef.on("child_added",async s=>{
@@ -394,11 +418,10 @@ async function openChat(uid){
    const m=s.val();if(!m||!m.uid)return;
    const mine=m.uid===me.uid;
    let sender={name:m.name||"مستخدم",photo:m.photo||""};
-   if(mine)sender={...sender,...(prof||{})};
-   else if(!m.photo||!m.name){
-    try{sender={...sender,...await getUser(m.uid)};}
-    catch(err){console.warn("تعذر تحميل ملف مرسل الرسالة",err);}
-   }
+   try{
+    watchMessageProfile(m.uid);
+    sender={...sender,...(mine?(prof||{}):await getUser(m.uid))};
+   }catch(err){console.warn("تعذر تحميل ملف مرسل الرسالة",err);}
    if(openId!==chatOpenToken)return;
    const line=document.createElement("div");
 line.className="message-line"+(mine?" mine":"");
@@ -440,7 +463,7 @@ line.addEventListener("pointercancel",()=>{
  line.style.transition="transform .2s ease";
  line.style.transform="";
 });
-   const av=document.createElement("img");av.className="message-avatar";av.src=m.photo||sender.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
+   const av=document.createElement("img");av.className="message-avatar";av.dataset.avatarUid=m.uid;av.src=sender.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
    av.onerror=()=>{av.onerror=null;av.src=NOAV;};
    av.title="عرض الملف الشخصي";av.style.cursor="pointer";av.onclick=()=>showUserProfile(m.uid);
    const d=document.createElement("div");d.className="m "+(mine?"me":"");
