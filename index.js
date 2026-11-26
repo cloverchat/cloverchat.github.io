@@ -111,7 +111,7 @@ function watchMessageProfile(uid){
   cache[uid]=current;
   if(uid===me?.uid)prof={...(prof||{}),...current};
   document.querySelectorAll(".message-avatar").forEach(av=>{
-   if(av.dataset.avatarUid===uid)av.src=current.photo||NOAV;
+   if(av.dataset.avatarUid===uid)av.src=current.photo||av.dataset.fallbackPhoto||NOAV;
   });
  };
  ref.on("value",handler);
@@ -463,7 +463,7 @@ line.addEventListener("pointercancel",()=>{
  line.style.transition="transform .2s ease";
  line.style.transform="";
 });
-   const av=document.createElement("img");av.className="message-avatar";av.dataset.avatarUid=m.uid;av.src=sender.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
+   const av=document.createElement("img");av.className="message-avatar";av.dataset.avatarUid=m.uid;av.dataset.fallbackPhoto=m.photo||"";av.src=sender.photo||m.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
    av.onerror=()=>{av.onerror=null;av.src=NOAV;};
    av.title="عرض الملف الشخصي";av.style.cursor="pointer";av.onclick=()=>showUserProfile(m.uid);
    const d=document.createElement("div");d.className="m "+(mine?"me":"");
