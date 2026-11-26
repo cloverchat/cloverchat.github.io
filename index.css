@@ -417,3 +417,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
  background-image:radial-gradient(#ffffff0a 1px,transparent 1px);
  background-size:20px 20px;
 }
+
+.reply-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-right:3px solid #4da3ff;background:#202a25;border-radius:8px;margin:0 10px 8px}
+.reply-preview[hidden]{display:none}
+.reply-preview p,.reply-quote p{margin:3px 0 0;overflow-wrap:anywhere}
+.reply-preview button{border:0;background:transparent;color:inherit;font-size:22px;cursor:pointer}
+.reply-quote{border-right:3px solid #4da3ff;background:#ffffff0d;padding:6px 9px;margin-bottom:7px;border-radius:5px;font-size:.85em}
