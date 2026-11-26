@@ -389,7 +389,10 @@ async function push(m){
  up["userChats/"+targetPeer.uid+"/"+targetChat]={with:sender.uid,last,time:TS};
  await db.ref().update(up);
 }
-
+$("cancelReply").onclick=()=>{
+ replyTarget=null;
+ $("replyPreview").hidden=true;
+};
 $("form").onsubmit=async e=>{
  e.preventDefault();
  if(sending)return;
