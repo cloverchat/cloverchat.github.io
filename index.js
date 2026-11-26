@@ -334,22 +334,42 @@ async function openChat(uid){
 line.className="message-line"+(mine?" mine":"");
 line.style.touchAction="pan-y";
 let swipeStart=null;
+let swipeStart=null,swiping=false;
 line.addEventListener("pointerdown",e=>{
  if(e.target.closest("a,button"))return;
  swipeStart={x:e.clientX,y:e.clientY};
+ swiping=false;
+});
+line.addEventListener("pointermove",e=>{
+ if(!swipeStart)return;
+ const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;
+ if(Math.abs(dy)>Math.abs(dx)&&!swiping){swipeStart=null;return;}
+ if(dx>0&&Math.abs(dx)>5){
+  swiping=true;
+  line.style.transform=`translateX(${Math.min(dx,100)}px)`;
+  line.style.transition="none";
+ }
 });
 line.addEventListener("pointerup",e=>{
  if(!swipeStart)return;
  const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;
  swipeStart=null;
- if(dx>65&&Math.abs(dy)<55){
+ line.style.transition="transform .2s ease";
+ line.style.transform="";
+ if(swiping&&dx>65&&Math.abs(dy)<55){
   replyTarget={id:s.key,uid:m.uid,name:sender.name||"مستخدم",text:m.text||"",image:m.image||""};
   $("replyName").textContent=replyTarget.name;
-$("replyText").textContent=replyTarget.text||(replyTarget.image?"📷 صورة":"رسالة");
-$("replyPreview").hidden=false;
+  $("replyText").textContent=replyTarget.text||(replyTarget.image?"📷 صورة":"رسالة");
+  $("replyPreview").hidden=false;
  }
+ swiping=false;
 });
-line.addEventListener("pointercancel",()=>swipeStart=null);
+line.addEventListener("pointercancel",()=>{
+ swipeStart=null;
+ swiping=false;
+ line.style.transition="transform .2s ease";
+ line.style.transform="";
+});
    const av=document.createElement("img");av.className="message-avatar";av.src=m.photo||sender.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
    av.onerror=()=>{av.onerror=null;av.src=NOAV;};
    av.title="عرض الملف الشخصي";av.style.cursor="pointer";av.onclick=()=>showUserProfile(m.uid);
