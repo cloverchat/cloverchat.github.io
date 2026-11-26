@@ -413,9 +413,14 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .m a{color:#4da3ff;text-decoration:underline;overflow-wrap:anywhere}
 
 #msgs{
- background-color:#171c19;
- background-image:radial-gradient(#ffffff0a 1px,transparent 1px);
- background-size:20px 20px;
+ background-color:#0d1916;
+ background-image:
+  radial-gradient(circle at 18px 18px,rgba(116,190,150,.055) 1.2px,transparent 1.8px),
+  radial-gradient(circle at 54px 54px,rgba(116,190,150,.04) 1px,transparent 1.8px),
+  repeating-linear-gradient(45deg,transparent 0 34px,rgba(116,190,150,.018) 35px 36px,transparent 37px 70px),
+  radial-gradient(ellipse at 50% 0,rgba(32,216,135,.055),transparent 70%);
+ background-size:72px 72px,108px 108px,140px 140px,100% 100%;
+ background-attachment:local;
 }
 
 .reply-preview{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;border-right:3px solid #4da3ff;background:#202a25;border-radius:8px;margin:0 10px 8px}
