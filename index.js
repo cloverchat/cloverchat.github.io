@@ -349,6 +349,16 @@ line.addEventListener("pointercancel",()=>swipeStart=null);
    av.title="عرض الملف الشخصي";av.style.cursor="pointer";av.onclick=()=>showUserProfile(m.uid);
    const d=document.createElement("div");d.className="m "+(mine?"me":"");
    if(G&&!mine){const n=document.createElement("b");n.textContent=m.name||sender.name||"بدون اسم";n.style.cssText="display:block;color:var(--green-light);font-size:.8rem";d.append(n);}
+   if(m.replyTo){
+ const q=document.createElement("div");
+ q.className="reply-quote";
+ const n=document.createElement("b");
+ n.textContent=m.replyTo.name||"مستخدم";
+ const t=document.createElement("p");
+ t.textContent=m.replyTo.text||"📷 صورة";
+ q.append(n,t);
+ d.append(q);
+   }
    if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
     const im=document.createElement("img");im.src=m.image;im.loading="lazy";im.alt="صورة مرسلة";
     im.onerror=()=>im.remove();im.onload=()=>{if(openId===chatOpenToken)box.scrollTop=box.scrollHeight;};d.append(im);
