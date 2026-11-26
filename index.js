@@ -5,21 +5,15 @@ firebase.initializeApp({
   authDomain:"alamchat1.firebaseapp.com",
   databaseURL:"https://alamchat1-default-rtdb.firebaseio.com"
 });
-let phone="",telegramRequestId="",phoneLinkRequestId="";
+let phone="",phoneConfirmation=null,linkPhoneVerificationId=null,phoneRecaptcha=null,linkPhoneRecaptcha=null;
 const auth=firebase.auth(),db=firebase.database(),$=id=>document.getElementById(id);
 const WORKER="https://still-frost-fc39.eldinalam91.workers.dev";
 const NOAV="https://i.imgur.com/HeIi0wU.png";
 const LOGO="https://acrft.github.io/images/achat.png";
 const TS=firebase.database.ServerValue.TIMESTAMP;
 let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null;
-const cache=Object.create(null),profileRefs=Object.create(null);
+const cache=Object.create(null);
 let myPhone="",newPhoto=null,lp="",sending=false,bootUid=null;
-let aiMode=false,aiHistory=[],replyTarget=null;
-function clearReply(){
- replyTarget=null;
- const preview=$("replyPreview");
- if(preview)preview.hidden=true;
-}
 let chatOpenToken=0,listRenderToken=0;
 
 function icons(){
@@ -96,44 +90,6 @@ async function getUser(uid){
  }
  return cache[uid];
 }
-
-function clearMessageProfileWatches(){
- Object.values(profileRefs).forEach(x=>x.ref.off("value",x.handler));
- Object.keys(profileRefs).forEach(uid=>delete profileRefs[uid]);
-}
-
-function watchMessageProfile(uid){
- if(!uid||profileRefs[uid])return;
- const ref=db.ref("users/"+uid);
- const handler=s=>{
-  const data=s.val()||{};
-  const current={uid,...data,name:data.name||"حساب محذوف",photo:data.photo||"",username:data.username||""};
-  cache[uid]=current;
-  if(uid===me?.uid)prof={...(prof||{}),...current};
-  document.querySelectorAll(".message-avatar").forEach(av=>{
-   if(av.dataset.avatarUid===uid)av.src=current.photo||av.dataset.fallbackPhoto||NOAV;
-  });
- };
- ref.on("value",handler);
- profileRefs[uid]={ref,handler};
-}
-let userViewModal=null;
-async function showUserProfile(uid){
- if(!uid||uid==="__global")return;
- try{
-  const u=await getUser(uid);
-  if(!userViewModal){
-   userViewModal=document.createElement("div");userViewModal.className="user-view-overlay";userViewModal.id="userViewModal";
-   userViewModal.innerHTML='<section class="user-view-card" role="dialog" aria-modal="true" aria-labelledby="userViewName"><button class="user-view-close" type="button" aria-label="إغلاق">×</button><img class="user-view-photo" alt="الصورة الشخصية"><h2 id="userViewName"></h2><div class="user-view-username"></div><p class="user-view-bio"></p><button class="user-view-chat" type="button">إرسال رسالة</button></section>';
-   document.body.append(userViewModal);userViewModal.addEventListener("click",e=>{if(e.target===userViewModal||e.target.closest(".user-view-close"))userViewModal.hidden=true;});
-  }
-  const photo=userViewModal.querySelector(".user-view-photo");photo.src=u.photo||NOAV;photo.onerror=e=>{e.currentTarget.src=NOAV;};
-  userViewModal.querySelector("#userViewName").textContent=u.name||"مستخدم";
-  userViewModal.querySelector(".user-view-username").textContent=u.username?"@"+u.username:"";
-  userViewModal.querySelector(".user-view-bio").textContent=u.bio||"لا توجد نبذة شخصية";
-  userViewModal.querySelector(".user-view-chat").onclick=()=>{userViewModal.hidden=true;openChat(uid);};userViewModal.hidden=false;
- }catch(e){console.error(e);toast("تعذر تحميل الملف الشخصي");}
-}
 const fmt=t=>t?new Date(t).toLocaleTimeString("ar-EG",{
  hour:"2-digit",
  minute:"2-digit"
@@ -145,46 +101,96 @@ async function social(provider){
   await auth.signInWithPopup(provider);
  }catch(e){
   if(e.code==="auth/account-exists-with-different-credential"){
-   toast("هذا البريد مرتبط بطريقة دخول أخرى. ادخل بالطريقة الأصلية؛ لن ندمج الحسابات تلقائيًا.");
+   toast("البريد مرتبط بطريقة دخول أخرى. سجّل بالطريقة الأصلية أولًا، ثم اربط الطريقة الجديدة من إعدادات الحساب. لم يتم دمج أي حساب تلقائيًا.");
    return;
   }
-  if(e.code==="auth/popup-blocked")toast("اسمح بالنوافذ المنبثقة لتسجيل الدخول");
-  else if(e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request")toast(e.message||"فشل تسجيل الدخول");
+  if(!/popup-closed|cancelled/.test(e.code||""))
+   toast(e.message||"فشل الدخول");
  }
+}
+
+const GOOGLE_CLIENT_ID="755088097212-p2ldkdoo1mknmkvuib09lja1ne6ha4bh.apps.googleusercontent.com";
+let googleOneTapInitialized=false,googleOneTapPrompted=false;
+function initGoogleOneTap(){
+ if(googleOneTapInitialized||!window.google?.accounts?.id)return;
+ googleOneTapInitialized=true;
+ google.accounts.id.initialize({
+  client_id:GOOGLE_CLIENT_ID,
+  callback:async response=>{
+   if(!response?.credential)return;
+   try{
+    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    const credential=firebase.auth.GoogleAuthProvider.credential(response.credential);
+    await auth.signInWithCredential(credential);
+   }catch(e){
+    console.error("Google One Tap:",e);
+    if(e.code==="auth/account-exists-with-different-credential")
+     toast("البريد مرتبط بطريقة دخول أخرى. سجّل بالطريقة الأصلية ثم اربط Google من الإعدادات.");
+    else toast(e.message||"تعذر تسجيل الدخول باستخدام Google");
+   }
+  },
+  auto_select:false,
+  cancel_on_tap_outside:false,
+  use_fedcm_for_prompt:true,
+  context:"signin"
+ });
+}
+function showGoogleOneTap(){
+ if(googleOneTapPrompted||auth.currentUser||!$("login")||$("login").hidden)return;
+ initGoogleOneTap();
+ if(!window.google?.accounts?.id)return;
+ googleOneTapPrompted=true;
+ google.accounts.id.prompt(notification=>{
+  if(notification.isNotDisplayed()||notification.isSkippedMoment())
+   console.info("Google One Tap not displayed:",notification.getNotDisplayedReason?.()||notification.getSkippedReason?.());
+ });
 }
 $("googleBtn").onclick=()=>social(new firebase.auth.GoogleAuthProvider());
 $("githubBtn").onclick=()=>social(new firebase.auth.GithubAuthProvider());
 
-async function startTelegramLogin(){
- const b=$("telegramBtn");b.disabled=true;
- const tgWindow=window.open("about:blank","_blank");
- try{
-  const d=await api("/otp/start",{});
-  if(!d.link||!d.requestId)throw new Error("الخادم لم ينشئ طلب تسجيل الدخول");
-  telegramRequestId=d.requestId;
-  if(tgWindow)tgWindow.location=d.link;else toast("اسمح بفتح النوافذ المنبثقة لفتح Telegram");
-  $("codeBox").hidden=false;
-  toast("افتح بوت CloverChat في Telegram واضغط Start لاستلام الكود");
- }catch(e){if(tgWindow&&!tgWindow.closed)tgWindow.close();toast(e.message||"تعذر بدء تسجيل الدخول عبر Telegram");}
- finally{b.disabled=false;}
+function normalizePhone(value){
+ const p=String(value||"").replace(/[\s()-]/g,"");
+ if(!/^\+[1-9]\d{7,14}$/.test(p))throw new Error("اكتب الرقم بالصيغة الدولية، مثال: +201xxxxxxxxx");
+ return p;
 }
-$("telegramBtn").onclick=startTelegramLogin;
+function getRecaptcha(container,kind){
+ const key=kind==="link"?"linkPhoneRecaptcha":"phoneRecaptcha";
+ if(!window[key]){
+  window[key]=new firebase.auth.RecaptchaVerifier(container,{
+   size:"invisible",
+   callback:()=>{},
+   "expired-callback":()=>{
+    window[key]=null;
+   }
+  },firebase.app());
+ }
+ return window[key];
+}
+$("phoneBtn").onclick=async()=>{
+ const b=$("phoneBtn");b.disabled=true;
+ try{
+  phone=normalizePhone($("phoneIn").value);
+  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  phoneConfirmation=await auth.signInWithPhoneNumber(phone,getRecaptcha("recaptcha-container","login"));
+  $("codeBox").hidden=false;
+  toast("تم إرسال كود SMS إلى هاتفك");
+ }catch(e){
+  toast(e.message||"تعذر إرسال كود SMS");
+ }finally{b.disabled=false;}
+};
 $("codeBtn").onclick=async()=>{
  const b=$("codeBtn");b.disabled=true;
  try{
   const code=$("codeIn").value.trim();
-  if(!telegramRequestId)throw new Error("ابدأ تسجيل الدخول عبر Telegram أولًا");
-  if(!/^\d{6}$/.test(code))throw new Error("اكتب الكود المكوّن من 6 أرقام");
-  const d=await api("/otp/verify",{requestId:telegramRequestId,code});
-  if(!d.token)throw new Error("الخادم لم يرجع رمز تسجيل الدخول");
-  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  await auth.signInWithCustomToken(d.token);
-  telegramRequestId="";
+  if(!/^\d{6}$/.test(code))throw new Error("اكتب كود التحقق المكون من 6 أرقام");
+  if(!phoneConfirmation)throw new Error("اطلب كود تحقق جديد أولًا");
+  await phoneConfirmation.confirm(code);
+  phoneConfirmation=null;
+  toast("تم تسجيل الدخول بنجاح");
  }catch(e){toast(e.message||"فشل التحقق");}
  finally{b.disabled=false;}
 };
-
-$("suOut").onclick=$("pOut").onclick=async()=>{const b=$("pOut");if(b)b.disabled=true;try{await auth.signOut();$("modal").hidden=true;show("login");}catch(e){toast(e.message||"تعذر تسجيل الخروج");}finally{if(b)b.disabled=false;}};
+$("suOut").onclick=$("pOut").onclick=()=>auth.signOut();
 $("suBtn").onclick=async()=>{
  const u=$("suUser").value.trim().toLowerCase().replace(/^@/,"");
  if(!/^[a-z0-9_]{3,20}$/.test(u))return toast("اليوزر 3-20 حرف: إنجليزي وأرقام و _");
@@ -200,14 +206,17 @@ $("suBtn").onclick=async()=>{
 };
 auth.onAuthStateChanged(user=>{
  me=user;bootUid=user?.uid||null;stopAll();
- if(!user){prof=null;myPhone="";show("login");return;}
+ if(!user){prof=null;myPhone="";show("login");showGoogleOneTap();return;}
  boot().catch(e=>{console.error(e);toast("تعذر تحميل الحساب. حاول تاني.");});
 });
 async function boot(){
  const uid=me?.uid;if(!uid)return;
- const s=await db.ref("users/"+uid).once("value");
+ const [phoneSnap,s]=await Promise.all([
+  db.ref("userPhone/"+uid).once("value"),
+  db.ref("users/"+uid).once("value")
+ ]);
  if(me?.uid!==uid)return;
- try{const p=await api("/phone/me",{idToken:await me.getIdToken()});myPhone=p.phone||"";}catch(e){myPhone="";console.warn("Phone lookup failed",e);}
+ myPhone=phoneSnap.val()||"";
  if(!s.exists()){
   prof=null;
   $("suName").value=me.displayName||"";
@@ -221,39 +230,21 @@ async function boot(){
 function stopAll(){
  chatOpenToken++;listRenderToken++;
  if(msgRef)msgRef.off();if(listRef)listRef.off();
- clearMessageProfileWatches();
  msgRef=listRef=null;cur=peer=null;
  const room=$("room"),empty=$("empty"),list=$("chatList");
  if(room)room.hidden=true;if(empty)empty.hidden=false;if(list)list.replaceChildren();
 }
-
 function watchList(){
  if(listRef)listRef.off();
  listRef=db.ref("userChats/"+me.uid);
  listRef.on("value",async s=>{
   const renderId=++listRenderToken;
   try{
-   const items=[];
-   s.forEach(c=>items.push({id:c.key,...(c.val()||{})}));
+   const items=[];s.forEach(c=>items.push({id:c.key,...(c.val()||{})}));
    items.sort((a,b)=>(b.time||0)-(a.time||0));
-   const users=await Promise.all(items.map(async i=>{
-    try{return await getUser(i.with);}
-    catch(e){
-     console.error("تعذر تحميل المستخدم:",i.with,e);
-     return {uid:i.with,name:"مستخدم",photo:""};
-    }
-   }));
+   const users=await Promise.all(items.map(i=>getUser(i.with)));
    if(renderId!==listRenderToken||!me||!$("chatList"))return;
    const box=$("chatList");box.replaceChildren();
-   const ai=document.createElement("div");
-   ai.className="row ai-chat-row";
-   ai.id="aiChatRow";
-   ai.setAttribute("role","button");
-   ai.tabIndex=0;
-   ai.innerHTML='<span class="ai-avatar"><i data-lucide="sparkles"></i></span><div class="t"><b>Clover AI</b><div class="l">مساعدك الذكي</div></div><span class="ai-tag">AI</span>';
-   ai.onclick=()=>openAIChat();
-   ai.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openAIChat();}};
-   box.append(ai);
    const g=document.createElement("div");g.className="row"+(cur==="__global"?" on":"");
    const ga=document.createElement("img");ga.className="av";ga.src=LOGO;ga.alt="";
    const gt=document.createElement("div");gt.className="t";
@@ -268,135 +259,23 @@ function watchList(){
     const l=document.createElement("div");l.className="l";l.textContent=i.last||"";
     const tm=document.createElement("small");tm.className="muted";tm.textContent=fmt(i.time);
     t.append(nm,l);row.append(av,t,tm);row.onclick=()=>openChat(u.uid);box.append(row);
-   });
-   icons();
+   });icons();
   }catch(e){console.error(e);toast("تعذر تحميل قائمة المحادثات");}
  });
 }
-
 $("findIn").addEventListener("keydown",async e=>{
  if(e.key!=="Enter")return;e.preventDefault();
  const q=e.target.value.trim().toLowerCase().replace(/^@/,"");if(!q)return;
  try{
-  let uid;
-  if(/^\+?\d[\d\s()-]{6,18}$/.test(q)){
-   const phone=q.replace(/[\s()-]/g,"");
-   const d=await api("/phone/find",{idToken:await me.getIdToken(),phone});uid=d.uid;
-  }else{
-   const s=await db.ref("usernames/"+q).once("value");
-   if(!s.exists())return toast("مفيش مستخدم بالاسم ده");uid=s.val();
-  }
-  if(!uid)return toast("مفيش مستخدم بالبيانات دي");
-  if(uid===me.uid)return toast("ده حسابك 😄");
-  e.target.value="";openChat(uid);
- }catch(err){toast(err.message||"تعذر البحث عن المستخدم");}
+  const isP=/^\+?\d{8,15}$/.test(q),key=isP?q.replace(/\D/g,""):q;
+  const s=await db.ref(isP?"phones/"+key:"usernames/"+key).once("value");
+  if(!s.exists())return toast("مفيش مستخدم بالاسم ده");
+  if(s.val()===me.uid)return toast("ده حسابك 😄");
+  e.target.value="";openChat(s.val());
+ }catch(err){toast("تعذر البحث عن المستخدم");}
 });
-
-function renderFormattedText(el,value){
- const lines=String(value||"").split("\n");
- function inline(parent,str){
-  const re=/```([\s\S]+?)```|`([^`\n]+)`|\*([^*\n]+)\*|_([^_\n]+)_|~([^~\n]+)~|(https?:\/\/[^\s<>"']+)/g;
-  let last=0,m;
-  while((m=re.exec(str))){
-   parent.append(document.createTextNode(str.slice(last,m.index)));
-   let node;
-   if(m[1]!==undefined){node=document.createElement("code");node.className="wa-code-block";node.textContent=m[1];}
-   else if(m[2]!==undefined){node=document.createElement("code");node.className="wa-inline-code";node.textContent=m[2];}
-   else if(m[3]!==undefined){node=document.createElement("strong");node.textContent=m[3];}
-   else if(m[4]!==undefined){node=document.createElement("em");node.textContent=m[4];}
-   else if(m[5]!==undefined){node=document.createElement("del");node.textContent=m[5];}
-   else{node=document.createElement("a");node.href=m[6];node.textContent=m[6];node.target="_blank";node.rel="noopener noreferrer";}
-   parent.append(node);
-   last=re.lastIndex;
-  }
-  parent.append(document.createTextNode(str.slice(last)));
- }
- lines.forEach((line,i)=>{
-  const quote=line.match(/^>\s?(.*)$/);
-  const bullet=line.match(/^[-*]\s+(.+)$/);
-  const numbered=line.match(/^(\d+)\.\s+(.+)$/);
-  if(quote){
-   const q=document.createElement("blockquote");q.className="wa-quote";inline(q,quote[1]);el.append(q);
-  }else if(bullet||numbered){
-   const item=document.createElement("div");item.className="wa-list-item";
-   const marker=document.createElement("span");
-   marker.textContent=bullet?"•":numbered[1]+".";
-   item.append(marker,document.createTextNode(" "));
-   inline(item,bullet?bullet[1]:numbered[2]);el.append(item);
-  }else inline(el,line);
-  if(i<lines.length-1)el.append(document.createElement("br"));
- });
-}
-
-function renderAIMessage(text,mine=false){
- const box=$("msgs"),line=document.createElement("div");
- line.className="message-line"+(mine?" mine":"");
- const av=document.createElement("img");
- av.className="message-avatar";
- av.src=mine?(prof?.photo||NOAV):LOGO;
- av.alt=mine?"أنت":"Clover AI";
- const d=document.createElement("div");
- d.className="m"+(mine?" me":"");
- renderFormattedText(d,text);
- const tm=document.createElement("i");
- tm.textContent=fmt(Date.now());
- d.append(tm);
- line.append(av,d);
- box.append(line);
- box.scrollTop=box.scrollHeight;
-}
-
-async function openAIChat(){
- const openId=++chatOpenToken,uid=me?.uid;
- if(!uid)return;
- aiMode=true;
- if(msgRef)msgRef.off();
- clearMessageProfileWatches();
- msgRef=null;
- peer={uid:"__ai",name:"Clover AI",photo:LOGO};
- cur="__ai";
- $("empty").hidden=true;$("room").hidden=false;$("app").classList.add("open");
- $("peerName").textContent="Clover AI";$("peerUser").textContent="مساعدك الذكي";
- $("peerAv").src=LOGO;$("peerAv").style.cursor="default";$("peerName").style.cursor="default";
- $("peerAv").onclick=null;$("peerName").onclick=null;
- $("msgs").replaceChildren();$("imgBtn").hidden=true;
- try{
-  const snap=await db.ref("aiChats/"+uid+"/messages").once("value");
-  if(openId!==chatOpenToken||me?.uid!==uid)return;
-  aiHistory=[];
-  snap.forEach(child=>{
-   const m=child.val()||{};
-   if((m.role==="user"||m.role==="assistant")&&typeof m.content==="string")
-    aiHistory.push({role:m.role,content:m.content});
-  });
-  $("msgs").replaceChildren();
-  if(!aiHistory.length)renderAIMessage("أهلًا بك! أنا Clover AI ☘\nإزاي أقدر أساعدك؟");
-  else aiHistory.forEach(m=>renderAIMessage(m.content,m.role==="user"));
- }catch(e){
-  console.error(e);
-  toast("تعذر تحميل محادثة Clover AI");
- }
-}
-async function deleteMessage(id,line){
- if(!me||!id||!line)return;
- if(!confirm("هل تريد حذف هذه الرسالة نهائيًا؟"))return;
- const uid=me.uid,isGlobal=peer?.global,chatId=cur;
- const path=isGlobal?"chat/"+id:"chats/"+chatId+"/messages/"+id;
- const btn=line.querySelector(".delete-btn");
- if(btn)btn.disabled=true;
- try{
-  await db.ref(path).remove();
-  toast("تم حذف الرسالة");
- }catch(e){
-  console.error("Delete message error:",e);
-  toast("تعذر حذف الرسالة");
-  if(btn)btn.disabled=false;
- }
-}
 async function openChat(uid){
  const openId=++chatOpenToken;
- aiMode=false;
- $("imgBtn").hidden=false;
  try{
   const G=uid==="__global";
   const nextPeer=G?{uid:"__global",name:"🌍 الشات العام",photo:LOGO,global:true}:await getUser(uid);
@@ -406,123 +285,22 @@ async function openChat(uid){
   $("empty").hidden=true;$("room").hidden=false;$("app").classList.add("open");
   $("peerName").textContent=peer.name||"مستخدم";
   $("peerUser").textContent=G?"مجموعة عامة":(peer.username?"@"+peer.username:"");
-  $("peerAv").src=peer.photo||NOAV;$("peerAv").onerror=()=>{$("peerAv").src=NOAV;};
-  $("peerAv").style.cursor=G?"default":"pointer";$("peerName").style.cursor=G?"default":"pointer";
-  $("peerAv").onclick=()=>{if(!G)showUserProfile(peer.uid);};$("peerName").onclick=()=>{if(!G)showUserProfile(peer.uid);};
+  $("peerAv").src=peer.photo||NOAV;$("peerAv").onerror=()=>$("peerAv").src=NOAV;
   if(msgRef)msgRef.off();
-  clearMessageProfileWatches();
   const box=$("msgs");box.replaceChildren();
-  msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).orderByChild("time").limitToLast(100);
-  let renderQueue=Promise.resolve();
+  msgRef=(G?db.ref("chat"):db.ref("chats/"+cur+"/messages")).limitToLast(100);
   msgRef.on("child_added",s=>{
-   renderQueue=renderQueue.then(()=>renderChatMessage(s)).catch(e=>{
-    console.error(e);
-    if(openId===chatOpenToken)toast("تعذر تحميل الرسائل");
-   });
-  });
-  async function renderChatMessage(s){
    if(openId!==chatOpenToken)return;
    const m=s.val();if(!m||!m.uid)return;
-   const mine=m.uid===me.uid;
-   let sender={name:m.name||"مستخدم",photo:m.photo||""};
-   try{
-    watchMessageProfile(m.uid);
-    sender={...sender,...(mine?(prof||{}):await getUser(m.uid))};
-   }catch(err){console.warn("تعذر تحميل ملف مرسل الرسالة",err);}
-   if(openId!==chatOpenToken)return;
-   const line=document.createElement("div");
-line.className="message-line"+(mine?" mine":"");
-line.dataset.messageId=s.key;
-line.style.touchAction="pan-y";
-let swipeStart=null,swiping=false;
-line.addEventListener("pointerdown",e=>{
- if(e.target.closest("a,button"))return;
- swipeStart={x:e.clientX,y:e.clientY};
- swiping=false;
-});
-line.addEventListener("pointermove",e=>{
- if(!swipeStart)return;
- const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;
- if(Math.abs(dy)>Math.abs(dx)&&!swiping){swipeStart=null;return;}
- if(dx>0&&Math.abs(dx)>5){
-  swiping=true;
-  line.style.transform=`translateX(${Math.min(dx,100)}px)`;
-  line.style.transition="none";
- }
-});
-line.addEventListener("pointerup",e=>{
- if(!swipeStart)return;
- const dx=e.clientX-swipeStart.x,dy=e.clientY-swipeStart.y;
- swipeStart=null;
- line.style.transition="transform .2s ease";
- line.style.transform="";
- if(swiping&&dx>65&&Math.abs(dy)<55){
-  replyTarget={id:s.key,uid:m.uid,name:sender.name||"مستخدم",text:m.text||"",image:m.image||""};
-  $("replyName").textContent=replyTarget.name;
-  $("replyText").textContent=replyTarget.text||(replyTarget.image?"📷 صورة":"رسالة");
-  $("replyPreview").hidden=false;
- }
- swiping=false;
-});
-line.addEventListener("pointercancel",()=>{
- swipeStart=null;
- swiping=false;
- line.style.transition="transform .2s ease";
- line.style.transform="";
-});
-   const av=document.createElement("img");av.className="message-avatar";av.dataset.avatarUid=m.uid;av.dataset.fallbackPhoto=m.photo||"";av.src=sender.photo||m.photo||NOAV;av.alt=sender.name||"صورة المستخدم";av.loading="lazy";
-   av.onerror=()=>{av.onerror=null;av.src=NOAV;};
-   av.title="عرض الملف الشخصي";av.style.cursor="pointer";av.onclick=()=>showUserProfile(m.uid);
-   const d=document.createElement("div");d.className="m "+(mine?"me":"");
-   if(G&&!mine){const n=document.createElement("b");n.textContent=m.name||sender.name||"بدون اسم";n.style.cssText="display:block;color:var(--green-light);font-size:.8rem";d.append(n);}
-   if(m.replyTo){
- const q=document.createElement("div");
- q.className="reply-quote";
- const n=document.createElement("b");
- n.textContent=m.replyTo.name||"مستخدم";
- const t=document.createElement("p");
- t.textContent=m.replyTo.text||"📷 صورة";
- q.append(n,t);
- d.append(q);
-   }
+   const d=document.createElement("div");d.className="m "+(m.uid===me.uid?"me":"");
+   if(G&&m.uid!==me.uid){const n=document.createElement("b");n.textContent=m.name||"بدون اسم";n.style.cssText="display:block;color:var(--green-light);font-size:.8rem";d.append(n);}
    if(typeof m.image==="string"&&m.image.startsWith("data:image/")){
     const im=document.createElement("img");im.src=m.image;im.loading="lazy";im.alt="صورة مرسلة";
     im.onerror=()=>im.remove();im.onload=()=>{if(openId===chatOpenToken)box.scrollTop=box.scrollHeight;};d.append(im);
    }
-if(m.text){
- renderFormattedText(d,String(m.text).slice(0,500));
-}
-const replyBtn=document.createElement("button");
-replyBtn.type="button";
-replyBtn.className="reply-btn";
-replyBtn.textContent="↩";
-replyBtn.title="الرد على الرسالة";
-replyBtn.setAttribute("aria-label","الرد على الرسالة");
-replyBtn.onclick=()=>{
- replyTarget={id:s.key,uid:m.uid,name:sender.name||"مستخدم",text:m.text||"",image:m.image||""};
- $("replyName").textContent=replyTarget.name;
- $("replyText").textContent=replyTarget.text||(replyTarget.image?"📷 صورة":"رسالة");
- $("replyPreview").hidden=false;
-};
-const actions=document.createElement("div");
-actions.className="message-actions";
-const deleteBtn=document.createElement("button");
-deleteBtn.type="button";
-deleteBtn.className="delete-btn";
-deleteBtn.textContent="🗑️";
-deleteBtn.title="حذف الرسالة";
-deleteBtn.onclick=()=>deleteMessage(s.key,line);
-if(mine)actions.append(deleteBtn);
-actions.append(replyBtn);
-line.append(av,d,actions);
-box.append(line);
-box.scrollTop=box.scrollHeight;
-  }
-  msgRef.on("child_removed",s=>{
- if(openId!==chatOpenToken)return;
- const line=Array.from(box.children).find(el=>el.dataset.messageId===s.key);
- if(line)line.remove();
-});
+   if(m.text)d.append(document.createTextNode(String(m.text).slice(0,500)));
+   const tm=document.createElement("i");tm.textContent=fmt(m.time);d.append(tm);box.append(d);box.scrollTop=box.scrollHeight;
+  },e=>{if(openId!==chatOpenToken)return;console.error(e);toast("تعذر تحميل الرسائل");});
  }catch(e){if(openId===chatOpenToken){console.error(e);toast("تعذر فتح المحادثة");}}
 }
 $("backBtn").onclick=()=>$("app").classList.remove("open");
@@ -531,15 +309,11 @@ async function push(m){
  const targetPeer=peer,targetChat=cur,sender=me,senderProfile=prof;
  if(targetPeer.global)return db.ref("chat").push({uid:sender.uid,name:senderProfile.name||"مستخدم",photo:senderProfile.photo||"",...m,time:TS});
  const up={},last=m.text||"📷 صورة",id=db.ref().push().key;
- up["chats/"+targetChat+"/messages/"+id]={uid:sender.uid,name:senderProfile.name||"مستخدم",photo:senderProfile.photo||"",...m,time:TS};
+ up["chats/"+targetChat+"/messages/"+id]={uid:sender.uid,...m,time:TS};
  up["userChats/"+sender.uid+"/"+targetChat]={with:targetPeer.uid,last,time:TS};
  up["userChats/"+targetPeer.uid+"/"+targetChat]={with:sender.uid,last,time:TS};
  await db.ref().update(up);
 }
-$("cancelReply").onclick=()=>{
- replyTarget=null;
- $("replyPreview").hidden=true;
-};
 $("form").onsubmit=async e=>{
  e.preventDefault();
  if(sending)return;
@@ -549,43 +323,13 @@ $("form").onsubmit=async e=>{
  const b=$("form").querySelector('[type="submit"]');
  if(b)b.disabled=true;
  input.value="";
-let aiUserSaved=false;
-try{  
-if(aiMode){
- const uid=me.uid,openId=chatOpenToken;
- const userMessage={role:"user",content:text};
- const history=[...aiHistory,userMessage];
- await db.ref("aiChats/"+uid+"/messages").push().set({...userMessage,time:TS});aiUserSaved=true;
- if(aiMode&&cur==="__ai"&&chatOpenToken===openId){
-  aiHistory=history;
-  renderAIMessage(text,true);
- }
- const d=await api("/ai/chat",{
-  idToken:await me.getIdToken(),
-  messages:history.slice(-18)
- });
- if(typeof d.reply!=="string")throw new Error("Invalid AI response");
- const assistantMessage={role:"assistant",content:d.reply};
- await db.ref("aiChats/"+uid+"/messages").push().set({...assistantMessage,time:TS});
- if(aiMode&&cur==="__ai"&&chatOpenToken===openId){
-  aiHistory=[...history,assistantMessage];
-  renderAIMessage(d.reply,false);
- }
-}else{
-
-   const reply=replyTarget?{replyTo:{id:replyTarget.id,uid:replyTarget.uid,name:replyTarget.name,text:replyTarget.text.slice(0,200)}}:{};
-await push({text:text.slice(0,500),...reply});
-replyTarget=null;
-$("replyPreview").hidden=true;
-  }
+ try{
+  await push({text:text.slice(0,500)});
  }catch(er){
-   if(aiMode){
- console.warn("رسالة المستخدم محفوظة، لكن تعذر الحصول على رد من Clover AI");
-}
-  console.error("Clover AI error:",er);
- toast(er.message||"تعذر الإرسال");
-if(!aiMode||!aiUserSaved)input.value=text+(input.value?"\n"+input.value:"");
-}finally{
+  toast("تعذر الإرسال");
+  if(!input.value)input.value=text;
+  else input.value=text+"\n"+input.value;
+ }finally{
   sending=false;
   if(b)b.disabled=false;
  }
@@ -600,59 +344,73 @@ $("imgIn").onchange=async e=>{
  catch(er){toast(er.message||"تعذر إرسال الصورة");}
  finally{b.disabled=false;}
 };
+function getLoginMethods(user){
+ const ids=new Set((user.providerData||[]).map(p=>p.providerId).filter(Boolean));
+ if(user.phoneNumber)ids.add("phone");
+ if(/^tg\d+$/.test(String(user.uid||"")))ids.add("telegram");
+ return ids;
+}
 async function renderLinked(){
  const box=$("linked"),current=auth.currentUser;
  if(!box||!current)return;
  box.replaceChildren();
- try{await current.reload();}catch(e){console.warn("تعذر تحديث بيانات الحسابات المرتبطة",e);}
- const fresh=auth.currentUser||current;
- const addButton=(parent,label,action)=>{
-  const b=document.createElement("button");b.type="button";b.className="btn ghost";b.textContent=label;b.onclick=action;parent.append(b);return b;
- };
- const addTitle=label=>{const h=document.createElement("div");h.className="linked-title";h.textContent=label;box.append(h);};
- const providers=[
-  {id:"google.com",name:"Google",make:()=>new firebase.auth.GoogleAuthProvider()},
-  {id:"github.com",name:"GitHub",make:()=>new firebase.auth.GithubAuthProvider()}
- ];
- addTitle("حسابات تسجيل الدخول");
- for(const item of providers){
-  const linked=(fresh.providerData||[]).some(p=>p.providerId===item.id);
-  addButton(box,linked?"✅ "+item.name+" — مرتبط":"ربط "+item.name,async e=>{
-   const button=e.currentTarget;button.disabled=true;
+ await current.reload();
+ const ids=(current.providerData||[]).map(x=>x.providerId);
+ const methods=[["google.com","Google",()=>new firebase.auth.GoogleAuthProvider()],["github.com","GitHub",()=>new firebase.auth.GithubAuthProvider()]];
+ const phoneLinked=!!current.phoneNumber;
+ function addButton(label,action,disabled=false){
+  const b=document.createElement("button");
+  b.type="button";
+  b.className="btn ghost";
+  b.textContent=label;
+  b.disabled=disabled;
+  b.onclick=action;
+  box.append(b);
+ }
+ for(const [id,name,makeProvider] of methods){
+  const linked=ids.includes(id);
+  addButton(linked?"✅ "+name+" مربوط — إلغاء الربط":"ربط حساب "+name,async()=>{
+   const b=[...box.querySelectorAll("button")].find(x=>x.textContent.includes(name));
+   if(b)b.disabled=true;
    try{
+    const user=auth.currentUser;
     if(linked){
-     const fresh=auth.currentUser;
-     const count=(fresh.providerData||[]).length;
-     if(count<=1)throw new Error("لا يمكن فصل آخر وسيلة دخول لحسابك. اربط وسيلة أخرى أولًا.");
-     if(!confirm("هل تريد إلغاء ربط حساب "+item.name+"؟"))return;
-     await fresh.unlink(item.id);
-     await fresh.reload();
-     toast("تم إلغاء ربط "+item.name);
+     await user.reload();
+     if(getLoginMethods(user).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+     await user.unlink(id);
+     toast("تم إلغاء ربط "+name);
     }else{
-     const result=await auth.currentUser.linkWithPopup(item.make());
-     me=result.user;
-     await me.reload();
-     toast("تم ربط "+item.name+" بحسابك الحالي");
+     await user.linkWithPopup(makeProvider());
+     toast("تم ربط "+name+" بالحساب الحالي");
     }
-    await renderLinked();
-   }catch(err){
-    if(err.code==="auth/credential-already-in-use"||err.code==="auth/email-already-in-use")toast("هذا الحساب مرتبط بحساب CloverChat آخر. لن ندمج الحسابات تلقائيًا.");
-    else if(err.code==="auth/provider-already-linked")toast("هذا الحساب مرتبط بالفعل");
-    else if(err.code==="auth/popup-blocked")toast("اسمح بالنوافذ المنبثقة ثم حاول مرة أخرى");
-    else if(err.code==="auth/requires-recent-login")toast("سجّل الخروج ثم ادخل مجددًا، وبعدها أعد المحاولة");
-    else if(err.code!=="auth/popup-closed-by-user"&&err.code!=="auth/cancelled-popup-request")toast(err.message||"تعذر تحديث الحساب المرتبط");
-   }finally{button.disabled=false;}
+    await auth.currentUser.reload();
+    renderLinked();
+   }catch(e){
+    const messages={
+     "auth/credential-already-in-use":"وسيلة الدخول دي مرتبطة بحساب آخر",
+     "auth/provider-already-linked":"وسيلة الدخول مرتبطة بالفعل",
+     "auth/requires-recent-login":"سجّل الدخول مرة أخرى ثم حاول إلغاء الربط",
+     "auth/popup-closed-by-user":"تم إغلاق نافذة تسجيل الدخول"
+    };
+    toast(messages[e.code]||e.message||"تعذر تنفيذ العملية");
+    if(b)b.disabled=false;
+   }
   });
  }
- addTitle("رقم الهاتف");
- addButton(box,myPhone?"✅ الهاتف المرتبط: "+myPhone:"ربط رقم هاتف عبر Telegram",async()=>{
-  if(myPhone){
-   if(!confirm("هل تريد إلغاء ربط رقم الهاتف؟"))return;
-   try{await api("/phone/unlink",{idToken:await current.getIdToken()});myPhone="";toast("تم إلغاء ربط رقم الهاتف");await renderLinked();}
-   catch(e){toast(e.message||"تعذر إلغاء ربط الرقم");}
-   return;
+ addButton(phoneLinked?"✅ الهاتف "+current.phoneNumber+" — إلغاء الربط":"ربط رقم هاتف",async()=>{
+  if(phoneLinked){
+   try{
+    await current.reload();
+    if(getLoginMethods(current).size<=1)throw new Error("لا يمكن إلغاء آخر وسيلة دخول لحسابك");
+    await current.unlink("phone");
+    myPhone="";
+    toast("تم إلغاء ربط الهاتف");
+    renderLinked();
+   }catch(e){toast(e.message||"تعذر إلغاء ربط الهاتف");}
+  }else{
+   $("modal").hidden=true;
+   show("plink");
   }
-  $("modal").hidden=true;show("plink");
  });
  icons();
 }
@@ -693,28 +451,40 @@ $("pSave").onclick=async()=>{
 };
 $("plBtn").onclick=async()=>{
  const b=$("plBtn");b.disabled=true;
- const tgWindow=window.open("about:blank","_blank");
  try{
-  const d=await api("/phone/link/start",{idToken:await auth.currentUser.getIdToken()});
-  if(!d.link||!d.requestId)throw new Error("تعذر إنشاء طلب ربط الهاتف");
-  phoneLinkRequestId=d.requestId;
+  lp=normalizePhone($("plPhone").value);
+  const verifier=getRecaptcha("link-recaptcha-container","link");
+  linkPhoneVerificationId=await new firebase.auth.PhoneAuthProvider(auth).verifyPhoneNumber(lp,verifier);
   $("plBox").hidden=false;
-  if(tgWindow)tgWindow.location=d.link;else toast("اسمح بفتح النوافذ المنبثقة لفتح Telegram");
-  toast("افتح البوت واضغط Start ثم شارك رقم هاتفك من زر مشاركة جهة الاتصال");
-  const started=Date.now();
-  while(Date.now()-started<120000){
-   await new Promise(r=>setTimeout(r,2500));
-   const status=await api("/phone/link/status",{idToken:await auth.currentUser.getIdToken(),requestId:phoneLinkRequestId});
-   if(status.status==="linked"){
-    myPhone=status.phone||"";phoneLinkRequestId="";$("plBox").hidden=true;
-    toast("تم التحقق من ملكية الرقم وربطه بحسابك بنجاح");show("app");renderLinked();$("modal").hidden=false;return;
-   }
-  }
-  throw new Error("انتهت مهلة انتظار مشاركة جهة الاتصال. ابدأ المحاولة مرة أخرى.");
- }catch(e){if(tgWindow&&!tgWindow.closed)tgWindow.close();$("plBox").hidden=true;toast(e.message||"تعذر ربط الهاتف");}
+  toast("تم إرسال كود SMS إلى الرقم الجديد");
+ }catch(e){toast(e.message||"تعذر إرسال كود SMS");}
  finally{b.disabled=false;}
 };
-$("plCodeBtn").onclick=()=>toast("شارك جهة الاتصال من داخل محادثة البوت في Telegram؛ لا يوجد كود SMS.");
+$("plCodeBtn").onclick=async()=>{
+ const b=$("plCodeBtn");b.disabled=true;
+ try{
+  const code=$("plCode").value.trim();
+  if(!/^\d{6}$/.test(code))throw new Error("اكتب كود التحقق المكون من 6 أرقام");
+  if(!linkPhoneVerificationId)throw new Error("اطلب كود تحقق جديد أولًا");
+  const credential=firebase.auth.PhoneAuthProvider.credential(linkPhoneVerificationId,code);
+  const current=auth.currentUser;
+  if(!current)throw new Error("سجّل الدخول أولًا");
+  if(current.phoneNumber){
+   await current.updatePhoneNumber(credential);
+  }else{
+   await current.linkWithCredential(credential);
+  }
+  await current.reload();
+  myPhone=current.phoneNumber||lp;
+  linkPhoneVerificationId=null;
+  $("plBox").hidden=true;
+  $("plCode").value="";
+  toast("تم ربط الهاتف بالحساب الحالي بنجاح");
+  show("app");renderLinked();$("modal").hidden=false;
+ }catch(e){
+  toast(e.code==="auth/credential-already-in-use"||e.code==="auth/phone-number-already-exists"?"الرقم مرتبط بحساب آخر بالفعل":e.message||"فشل ربط الرقم");
+ }finally{b.disabled=false;}
+};
 $("plOut").onclick=()=>show("app");
 document.addEventListener("keydown",e=>{
  if(e.key==="Escape"){
