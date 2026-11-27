@@ -590,3 +590,43 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     font-size:.81rem;
   }
 }
+
+/* Desktop login - horizontal layout */
+@media(min-width:761px){
+  .auth-screen{padding:20px;overflow-y:auto}
+  .auth-card{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:
+      "brandmark divider"
+      "brandname google"
+      "heading github"
+      "description telegram"
+      ". code"
+      "footer footer";
+    align-items:center;
+    column-gap:38px;
+    row-gap:10px;
+    width:min(100%,1000px);
+    max-width:1000px;
+    padding:30px 48px;
+    text-align:center;
+  }
+  .auth-card>.brand-mark{grid-area:brandmark;margin:0 auto 5px}
+  .auth-card>.brand-name{grid-area:brandname}
+  .auth-card>.seo-heading{grid-area:heading;margin:5px 0}
+  .auth-card>.auth-description{grid-area:description;margin:5px auto}
+  .auth-card>.auth-divider{grid-area:divider;margin:0 0 5px}
+  .auth-card>#googleBtn{grid-area:google}
+  .auth-card>#githubBtn{grid-area:github}
+  .auth-card>.or{grid-area:or;margin:0}
+  .auth-card>#telegramBtn{grid-area:telegram}
+  .auth-card>#codeBox{grid-area:code}
+  .auth-card>.auth-footer{grid-area:footer;margin-top:8px}
+  .auth-card>.btn{margin:0;min-height:56px}
+  .auth-card>.auth-footer{justify-self:center}
+}
+/* Fix provider icons */
+.github-icon{background:#26383d!important;color:#fff!important}
+.github-icon svg{display:block!important;width:24px!important;height:24px!important;stroke:currentColor!important}
+#telegramBtn>svg{display:block!important;width:21px;height:21px}
