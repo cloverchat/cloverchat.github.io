@@ -1,17 +1,14 @@
-
 # CloverChat
 
-CloverChat is an Arabic chat platform for connecting with friends.
+> CloverChat is an online chat platform with an Arabic interface.
 
-- Website: https://cloverchat.github.io/
-- Main application: https://cloverchat.github.io/
-- Language: Arabic
-- Interface direction: RTL
+## Website
+- Homepage: https://cloverchat.github.io/
 
-## Main features
+## Features
+- Online messaging and conversations.
+- User accounts and authentication.
+- Arabic language support.
 
-- User profiles
-- Private conversations
-- Image sharing
-- Google, GitHub, and Telegram sign-in
-- Clover AI
+## Languages
+- Arabic
