@@ -715,7 +715,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   .empty-art{transform:scale(.88);margin-bottom:14px}
 }
 
-/* PROFILE MODAL FIX */
+
+/* PROFILE MODAL - PORTRAIT LAYOUT */
 #modal.modal{
  position:fixed;
  inset:0;
@@ -723,51 +724,42 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
  display:flex;
  align-items:center;
  justify-content:center;
- padding:20px;
+ padding:16px;
  overflow-y:auto;
 }
 #modal.modal[hidden]{display:none!important}
 #modal .profile-card{
- width:min(100%,560px);
- max-width:560px;
- max-height:calc(100dvh - 40px);
+ width:min(100%,440px);
+ max-width:440px;
+ max-height:calc(100dvh - 32px);
  min-height:0;
  overflow-y:auto;
  overflow-x:hidden;
  overscroll-behavior:contain;
- scrollbar-gutter:stable;
- direction:ltr;
  text-align:right;
- padding:30px clamp(22px,4vw,42px);
+ padding:26px;
  border-radius:28px;
 }
-#modal .profile-card>*{direction:rtl}
-#modal .modal-heading{margin-bottom:22px}
-#modal .profile-photo-wrap{margin:14px auto 28px}
+#modal .modal-heading{margin-bottom:17px}
+#modal .profile-photo-wrap{margin:9px auto 23px}
 #modal .profile-card input:not([type=file]),
 #modal .profile-card textarea{
  width:100%;
- min-height:58px;
- margin:8px 0 17px;
- padding:14px 16px;
 }
 #modal .profile-card textarea{
  min-height:120px;
  resize:vertical;
 }
-#modal .linked-title{margin-top:24px}
 #modal #pSave,#modal #pOut{
  width:100%;
  margin-top:10px;
- min-height:58px;
 }
-#modal #pOut{margin-bottom:8px}
-@media(max-width:600px){
+@media(max-width:480px){
  #modal.modal{padding:10px}
  #modal .profile-card{
   width:100%;
   max-height:calc(100dvh - 20px);
-  padding:24px 18px;
+  padding:22px 17px;
   border-radius:23px;
  }
 }
