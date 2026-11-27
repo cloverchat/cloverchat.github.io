@@ -34,8 +34,7 @@
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script defer src="https://accounts.google.com/gsi/client"></script>
-<script defer src="./index.js"></script>
+<script defer src="./index.js?v=20261125-4"></script>
 </head>
 <body>
 <a class="skip-link" href="#app">تخطي إلى المحادثات</a>
@@ -43,7 +42,7 @@
 <div class="ambient ambient-two" aria-hidden="true"></div>
 <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<!-- LOGIN: keep IDs synchronized with index.js -->
+<!-- LOGIN: Telegram OTP; no Firebase SMS billing required -->
 <main id="login" class="center auth-screen" hidden>
 <div class="card auth-card">
 <div class="brand-mark"><img class="logo" src="https://acrft.github.io/images/achat.png" alt="شعار CloverChat" width="160" height="160" fetchpriority="high"></div>
@@ -53,36 +52,26 @@
 <div class="auth-divider"><span>ابدأ رحلتك</span></div>
 <button id="googleBtn" class="btn provider-btn" type="button"><span class="provider-icon google-icon" aria-hidden="true">G</span><span>المتابعة باستخدام Google</span><i data-lucide="arrow-left" aria-hidden="true"></i></button>
 <button id="githubBtn" class="btn provider-btn github-btn" type="button"><span class="provider-icon github-icon"><i data-lucide="github" aria-hidden="true"></i></span><span>المتابعة باستخدام GitHub</span><i data-lucide="arrow-left" aria-hidden="true"></i></button>
-<div class="or"><span>أو باستخدام رقم الهاتف</span></div>
-<label class="field-label" for="phoneIn">رقم الهاتف</label>
-<input id="phoneIn" type="tel" dir="ltr" inputmode="tel" placeholder="+20123456789" autocomplete="tel">
-<div id="recaptcha-container"></div>
-<button id="phoneBtn" class="btn primary-btn" type="button"><i data-lucide="send" aria-hidden="true"></i><span>إرسال كود التحقق</span></button>
+<div class="or"><span>أو</span></div>
+<button id="telegramBtn" class="btn primary-btn" type="button"><i data-lucide="send" aria-hidden="true"></i><span>تسجيل الدخول عبر Telegram</span></button>
 <div id="codeBox" class="code-box" hidden>
-<p class="muted small">أدخل كود التحقق المرسل إلى هاتفك عبر SMS.</p>
-<label class="field-label" for="codeIn">كود التحقق</label>
+<p class="muted small">افتح بوت CloverChat على Telegram واضغط Start لاستلام كود الدخول.</p>
+<label class="field-label" for="codeIn">كود Telegram</label>
 <input id="codeIn" inputmode="numeric" maxlength="6" dir="ltr" placeholder="000000" autocomplete="one-time-code">
-<button id="codeBtn" class="btn primary-btn" type="button">تأكيد الكود</button>
+<button id="codeBtn" class="btn primary-btn" type="button">تأكيد وتسجيل الدخول</button>
 </div>
-<div class="auth-footer"><i data-lucide="shield-check" aria-hidden="true"></i><span>تسجيل دخول آمن لحسابك</span></div>
+<div class="auth-footer"><i data-lucide="shield-check" aria-hidden="true"></i><span>اختر طريقة الدخول المناسبة لحسابك</span></div>
 </div>
 </main>
 
-<!-- LINK PHONE -->
+<!-- LINK PHONE THROUGH TELEGRAM CONTACT SHARING -->
 <main id="plink" class="center auth-screen" hidden>
 <div class="card auth-card">
 <div class="section-icon"><i data-lucide="smartphone" aria-hidden="true"></i></div>
 <h2>ربط رقم الهاتف</h2>
-<p class="muted small">اربط رقم هاتفك بحسابك لتسهيل التواصل.</p>
-<label class="field-label" for="plPhone">رقم الهاتف</label>
-<input id="plPhone" type="tel" dir="ltr" inputmode="tel" placeholder="+20123456789" autocomplete="tel">
-<div id="link-recaptcha-container"></div>
-<button id="plBtn" class="btn primary-btn" type="button"><i data-lucide="send" aria-hidden="true"></i>إرسال كود التحقق</button>
-<div id="plBox" hidden>
-<label class="field-label" for="plCode">كود التحقق</label>
-<input id="plCode" inputmode="numeric" maxlength="6" dir="ltr" placeholder="كود التحقق" autocomplete="one-time-code">
-<button id="plCodeBtn" class="btn primary-btn" type="button">تأكيد وربط الرقم</button>
-</div>
+<p class="muted small">لن تحتاج إلى كتابة رقمك هنا. اضغط الزر لفتح بوت CloverChat، ثم اضغط Start وشارك رقم هاتفك باستخدام زر «مشاركة جهة الاتصال» داخل Telegram. سيتحقق البوت من أن الرقم يخص حسابك قبل ربطه. لن نستخدم رسائل SMS.</p>
+<button id="plBtn" class="btn primary-btn" type="button"><i data-lucide="send" aria-hidden="true"></i>التحقق عبر Telegram</button>
+<div id="plBox" hidden><p class="muted small">بانتظار مشاركة جهة الاتصال من البوت...</p><button id="plCodeBtn" class="btn ghost" type="button">مساعدة</button></div>
 <button id="plOut" class="btn ghost" type="button"><i data-lucide="arrow-right" aria-hidden="true"></i>رجوع</button>
 </div>
 </main>
@@ -119,7 +108,13 @@
 <input id="findIn" dir="ltr" placeholder="ابحث عن مستخدم..." aria-label="البحث عن مستخدم" autocomplete="off" autocapitalize="none" spellcheck="false">
 <kbd aria-hidden="true">↵</kbd>
 </div>
-<div id="chatList" class="list" role="list" aria-label="المحادثات"></div>
+<div id="chatList" class="list" role="list" aria-label="المحادثات">
+<div id="aiChatRow" class="row ai-chat-row" role="button" tabindex="0" aria-label="فتح Clover AI">
+<span class="ai-avatar"><i data-lucide="sparkles"></i></span>
+<div class="t"><b>Clover AI</b><div class="l">مساعدك الذكي</div></div>
+<span class="ai-tag">AI</span>
+</div>
+</div>
 <footer class="sidebar-bottom"><div class="online-indicator" aria-hidden="true"></div><span>متصل بحسابك</span><span class="version">CLOVERCHAT</span></footer>
 </aside>
 
@@ -145,6 +140,10 @@
 <div class="header-actions"><span class="secure-label"><i data-lucide="shield-check" aria-hidden="true"></i>محادثة</span></div>
 </header>
 <div id="msgs" class="msgs" role="log" aria-live="polite" aria-relevant="additions text" aria-label="الرسائل"></div>
+<div id="replyPreview" class="reply-preview" hidden>
+<div><b id="replyName"></b><p id="replyText"></p></div>
+<button id="cancelReply" type="button" aria-label="إلغاء الرد">×</button>
+</div>
 <form id="form" class="message-composer" autocomplete="off">
 <button id="imgBtn" type="button" class="icon-btn attach-btn" title="إرفاق صورة" aria-label="إرفاق صورة"><i data-lucide="image-plus" aria-hidden="true"></i></button>
 <input id="imgIn" type="file" accept="image/*" hidden aria-label="اختيار صورة">
