@@ -631,3 +631,89 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .github-icon svg{display:block!important;width:24px!important;height:24px!important;stroke:currentColor!important}
 #telegramBtn>svg{display:block!important;width:21px;height:21px}
 .github-icon img{width:24px;height:24px;object-fit:contain;display:block}
+
+
+/* CloverChat responsive UI refinement */
+.auth-screen{width:100%;min-height:100dvh;padding:clamp(14px,3vw,42px);overflow-y:auto}
+.auth-card{width:min(100%,920px);max-width:920px;margin:auto}
+.auth-card .btn{min-height:56px}
+.github-icon img{width:24px;height:24px;object-fit:contain;display:block}
+@media(min-width:900px){
+  #login .auth-card{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(300px,.9fr);
+    grid-template-areas:
+      "mark divider"
+      "name google"
+      "heading github"
+      "description or"
+      ". telegram"
+      ". code"
+      "footer footer";
+    align-items:center;
+    column-gap:clamp(28px,4vw,58px);
+    row-gap:10px;
+    padding:42px clamp(34px,5vw,66px);
+    text-align:center;
+  }
+  #login .brand-mark{grid-area:mark;width:116px;height:116px;margin:0 auto 8px}
+  #login .brand-name{grid-area:name;font-size:1.8rem}
+  #login .seo-heading{grid-area:heading;font-size:clamp(1.65rem,2.5vw,2.2rem);margin:8px 0}
+  #login .auth-description{grid-area:description;margin:0 auto 12px;font-size:.95rem}
+  #login .auth-divider{grid-area:divider;margin:0 0 8px}
+  #login #googleBtn{grid-area:google}
+  #login #githubBtn{grid-area:github}
+  #login .or{grid-area:or;margin:0}
+  #login #telegramBtn{grid-area:telegram}
+  #login #codeBox{grid-area:code}
+  #login .auth-footer{grid-area:footer;margin-top:18px}
+  #login .btn{margin:0;min-height:58px}
+  #login .provider-btn>span:nth-child(2){text-align:center}
+}
+@media(min-width:761px) and (max-width:899px){
+  #login .auth-card{max-width:620px;padding:34px}
+  #login .brand-mark{width:110px;height:110px}
+  #login .seo-heading{font-size:1.7rem}
+  #login .btn{min-height:55px}
+}
+@media(max-width:760px){
+  .auth-screen{align-items:flex-start;padding:24px 16px}
+  #login .auth-card{max-width:460px;margin:auto;padding:30px 25px}
+  #login .brand-mark{width:104px;height:104px;margin-bottom:15px}
+  #login .brand-name{font-size:1.5rem}
+  #login .seo-heading{font-size:1.55rem;margin:13px 0 8px}
+  #login .auth-description{font-size:.9rem;margin:7px 0 20px}
+  #login .auth-divider{margin:17px 0}
+  #login .btn{min-height:54px;margin:7px 0;border-radius:15px;font-size:.88rem}
+  #login .provider-icon{width:32px;height:32px}
+  #login .auth-footer{margin-top:17px;font-size:.73rem}
+  #plink .auth-card,#setup .auth-card{max-width:460px}
+}
+@media(max-width:420px){
+  .auth-screen{padding:16px 12px}
+  #login .auth-card{padding:26px 19px;border-radius:26px}
+  #login .brand-mark{width:88px;height:88px}
+  #login .seo-heading{font-size:1.35rem}
+  #login .auth-description{font-size:.84rem}
+  #login .btn{min-height:52px;font-size:.83rem}
+  #login .provider-btn>span:nth-child(2){font-size:.82rem}
+}
+@media(max-height:700px) and (min-width:761px){
+  #login .auth-card{padding-top:24px;padding-bottom:22px;row-gap:6px}
+  #login .brand-mark{width:86px;height:86px}
+  #login .seo-heading{font-size:1.55rem;margin:3px 0}
+  #login .auth-description{margin:0 auto 5px}
+  #login .btn{min-height:49px}
+  #login .auth-footer{margin-top:8px}
+}
+/* Better chat layout on narrow screens */
+@media(max-width:760px){
+  .app{height:100dvh}
+  .side{min-height:0}
+  .list{overscroll-behavior:contain}
+  .msgs{overscroll-behavior:contain}
+  .message-composer{gap:8px}
+  .message-composer input{font-size:16px}
+  .m{max-width:88%;font-size:.88rem}
+  .empty-art{transform:scale(.88);margin-bottom:14px}
+}
