@@ -223,7 +223,7 @@ $("suBtn").onclick=async()=>{
 };
 auth.onAuthStateChanged(user=>{
  me=user;bootUid=user?.uid||null;stopAll();
- if(!user){prof=null;myPhone="";show("login");return;}
+ if(!user){prof=null;myPhone="";show("login");initGoogleOneTap();return;}
  boot().catch(e=>{console.error(e);toast("تعذر تحميل الحساب. حاول تاني.");});
 });
 async function boot(){
