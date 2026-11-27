@@ -9,7 +9,7 @@ let phone="",telegramRequestId="",phoneLinkRequestId="";
 const auth=firebase.auth(),db=firebase.database(),$=id=>document.getElementById(id);
 const WORKER="https://still-frost-fc39.eldinalam91.workers.dev";
 const NOAV="https://i.imgur.com/HeIi0wU.png";
-const LOGO="https://img.magnific.com/premium-vector/clover-leaf-pixel-art-illustration_698293-42.jpg";
+const LOGO="https://cloverchat.github.io/assets/images/cloverchat.webp";
 const TS=firebase.database.ServerValue.TIMESTAMP;
 let me=null,prof=null,peer=null,cur=null,msgRef=null,listRef=null;
 const cache=Object.create(null),profileRefs=Object.create(null);
