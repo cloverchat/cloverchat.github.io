@@ -138,7 +138,30 @@ const fmt=t=>t?new Date(t).toLocaleTimeString("ar-EG",{
  hour:"2-digit",
  minute:"2-digit"
 }):"";
-
+const GOOGLE_CLIENT_ID="755088097212-p2ldkdoo1mknmkvuib09lja1ne6ha4bh.apps.googleusercontent.com";
+let googleOneTapInitialized=false;
+async function handleGoogleOneTap(response){
+ if(!response?.credential)return;
+ try{
+  const credential=firebase.auth.GoogleAuthProvider.credential(response.credential);
+  await auth.signInWithCredential(credential);
+ }catch(e){
+  console.error("Google One Tap:",e);
+  toast("فشل تسجيل الدخول باستخدام Google");
+ }
+}
+function initGoogleOneTap(){
+ if(googleOneTapInitialized||!window.google?.accounts?.id||auth.currentUser)return;
+ googleOneTapInitialized=true;
+ google.accounts.id.initialize({
+  client_id:GOOGLE_CLIENT_ID,
+  callback:handleGoogleOneTap,
+  context:"signin",
+  auto_select:false,
+  use_fedcm_for_prompt:true
+ });
+ google.accounts.id.prompt();
+}
 async function social(provider){
  try{
   await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
