@@ -2,11 +2,11 @@
    Replacement stylesheet for the existing index.html.
    Keeps the current HTML class names and Firebase-driven UI intact. */
 @font-face{
-  font-family:'Cairo';
-  src:url('./assets/fonts/Cairo-Variable.ttf') format('truetype');
-  font-style:normal;
-  font-weight:100 1000;
-  font-display:swap;
+font-family:'Cairo';
+src:url('./assets/fonts/Cairo-Variable.woff2') format('woff2');
+font-style:normal;
+font-weight:100 1000;
+font-display:swap;
 }
 :root{
   color-scheme:dark;
