@@ -158,7 +158,7 @@ function initGoogleOneTap(){
   callback:handleGoogleOneTap,
   context:"signin",
   auto_select:false,
-  use_fedcm_for_prompt:true
+  use_fedcm_for_prompt:false
  });
  google.accounts.id.prompt();
 }
